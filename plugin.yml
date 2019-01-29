@@ -1,0 +1,9 @@
+name: NaviCompass
+author: Xenophilicy
+version: 1.0.0
+main: Xenophilicy\NaviCompass\NaviCompass
+api: 3.0.0
+Description: View all your servers in a great list using FormAPI!
+commands:
+  servers:
+    description: View the server list!

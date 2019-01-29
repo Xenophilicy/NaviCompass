@@ -1,0 +1,39 @@
+# MADE BY:
+#  __    __                                          __        __  __  __                     
+# /  |  /  |                                        /  |      /  |/  |/  |                    
+# $$ |  $$ |  ______   _______    ______    ______  $$ |____  $$/ $$ |$$/   _______  __    __ 
+# $$  \/$$/  /      \ /       \  /      \  /      \ $$      \ /  |$$ |/  | /       |/  |  /  |
+#  $$  $$<  /$$$$$$  |$$$$$$$  |/$$$$$$  |/$$$$$$  |$$$$$$$  |$$ |$$ |$$ |/$$$$$$$/ $$ |  $$ |
+#   $$$$  \ $$    $$ |$$ |  $$ |$$ |  $$ |$$ |  $$ |$$ |  $$ |$$ |$$ |$$ |$$ |      $$ |  $$ |
+#  $$ /$$  |$$$$$$$$/ $$ |  $$ |$$ \__$$ |$$ |__$$ |$$ |  $$ |$$ |$$ |$$ |$$ \_____ $$ \__$$ |
+# $$ |  $$ |$$       |$$ |  $$ |$$    $$/ $$    $$/ $$ |  $$ |$$ |$$ |$$ |$$       |$$    $$ |
+# $$/   $$/  $$$$$$$/ $$/   $$/  $$$$$$/  $$$$$$$/  $$/   $$/ $$/ $$/ $$/  $$$$$$$/  $$$$$$$ |
+#                                         $$ |                                      /  \__$$ |
+#                                         $$ |                                      $$    $$/ 
+#                                         $$/                                        $$$$$$/       
+
+
+# Choose whether the selector item should be enabled
+Selector-Support: true
+
+# Choose what item the server selector should be
+Selector-Item: 345
+
+# This is the text that will show on the selector in the player's inventory!
+Selector-Name: "§l§aServer Selector"
+
+# This is the title of the server UI
+UI-Title: "§9Server List"
+
+# This is the message the will show under your title on the server UI
+UI-Message: "§aChoose a server to transfer to!"
+
+# This is where you list your servers to be displayed on the server UI
+# You can use '§' and '&' on the labels to colorize your servers inside the UI!
+# Format → Server Name:Server-IP:Server-Port
+Servers:
+  - "&l&6Lobby §eServer:xenoservers.ddns.net:19132"
+  - "§l&3Prison §eServer:xenoservers.ddns.net:19133"
+  - "&l&5Creative §eServer:xenoservers.ddns.net:19134"
+  - "&l&4PvP §eServer:xenoservers.ddns.net:19135"
+  - "&l&3Sky§cBlock §eServer:xenoservers.ddns.net:19136"
