@@ -13,7 +13,7 @@ This plugin allows players to transfer between servers with simplicity. **NaviCo
 ```
 ***
 
-## XenoTansfer Details
+## NaviCompass Details
 * **API:** 3.5.0+
 * **Version:** 1.0.0
 * **Basic Description:** Lets you transfer between your server network with a UI!
