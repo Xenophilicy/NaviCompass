@@ -33,7 +33,7 @@ UI-Message: "§aChoose a server to transfer to!"
 # Format → Server Name:Server-IP:Server-Port
 Servers:
   - "&l&6Lobby §eServer:xenoservers.ddns.net:19132"
-  - "§l&3Prison §eServer:xenoservers.ddns.net:19133"
+  - "§l&2Prison §eServer:xenoservers.ddns.net:19133"
   - "&l&5Creative §eServer:xenoservers.ddns.net:19134"
   - "&l&4PvP §eServer:xenoservers.ddns.net:19135"
   - "&l&3Sky§cBlock §eServer:xenoservers.ddns.net:19136"
