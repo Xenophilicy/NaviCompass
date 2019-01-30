@@ -36,6 +36,7 @@ class NaviCompass extends PluginBase implements Listener {
         $this->saveDefaultConfig();
         $this->config = new Config($this->getDataFolder()."config.yml", Config::YAML);
         $this->config->getAll();
+        $this->servers = $this->config->get("Servers");
         $this->getLogger()->info("NaviCompass has been enabled!");
         $selectorEnable = $this->config->get("Selector-Support");
         if ($selectorEnable == true) {
@@ -54,9 +55,10 @@ class NaviCompass extends PluginBase implements Listener {
             }
             else{
                 $sender->sendMessage(" ".$this->config->get("UI-Title"));
-                foreach ($this->config->getAll("Servers") as $servers) {
-                    $value = explode(":", $servers);
-                    $sender->sendMessage("Name: ".$value[0]." | IP: ".$value[1]." | Port: ".$value[2]);
+                foreach ($this->servers as $server) {
+                    $value = explode(":", $server);
+                    $value = str_replace("&", "§", $value);
+                    $sender->sendMessage("§eName: ".$value[0]."§r§e | IP: ".$value[1]." | Port: ".$value[2]);
                 }
             }
         }
@@ -69,16 +71,18 @@ class NaviCompass extends PluginBase implements Listener {
             if ($data === null){
                 return;
             }
-            if(isset($data[0])){
-                $value = explode(":", $this->config[0]);
-
+            else{
+                $value = explode(":", $this->servers[$data]);
+                $value = str_replace("&", "§", $value);
+                $this->getServer()->getCommandMap()->dispatch($player, 'transferserver '.$value[1].' '.$value[2]);
             }
             return true;
         });
         $form->setTitle($this->config->get("UI-Title"));
         $form->setContent($this->config->get("UI-Message"));
-        foreach ($this->config->getAll("Servers") as $servers) {
-            $value = explode(":", $servers);
+        foreach ($this->servers as $server) {
+            $value = explode(":", $server);
+            $value = str_replace("&", "§", $value);
             $form->addButton($value[0]);
         }
         $form->sendToPlayer($player);
@@ -108,7 +112,6 @@ class NaviCompass extends PluginBase implements Listener {
             if ($target->getCustomName() == "§o$selectorText") {
                 $player->getInventory()->remove($target);
             }
-            return false;
         }
     }
 
