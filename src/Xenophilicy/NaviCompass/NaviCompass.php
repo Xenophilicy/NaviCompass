@@ -48,7 +48,6 @@ class NaviCompass extends PluginBase implements Listener {
     }
 
     public function onCommand(CommandSender $sender, Command $command, string $label, array $args) : bool{
-        $player = $sender->getPlayer();
         if ($command->getName() == "servers"){
             if ($sender instanceof Player) {
                 $this->serverList($sender);
