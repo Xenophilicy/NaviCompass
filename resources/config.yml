@@ -30,10 +30,12 @@ UI-Message: "§aChoose a server to transfer to!"
 
 # This is where you list your servers to be displayed on the server UI
 # You can use '§' and '&' on the labels to colorize your servers inside the UI!
-# Format → Server Name:Server-IP:Server-Port
+# For images, use 'url' or 'path' to show an image in the menus (or leave blank to disable)
+# Note: If you are using a URL, do NOT include the 'https://' or 'http://' in the link!
+# Add as many servers as you'd like using this format → ServerName:ServerIP:ServerPort:ImageType:Path/URL
 Servers:
-  - "&l&6Lobby §eServer:xenoservers.ddns.net:19132"
-  - "§l&2Prison §eServer:xenoservers.ddns.net:19133"
-  - "&l&5Creative §eServer:xenoservers.ddns.net:19134"
-  - "&l&4PvP §eServer:xenoservers.ddns.net:19135"
-  - "&l&3Sky§cBlock §eServer:xenoservers.ddns.net:19136"
+  - "&l&6Lobby §eServer:xenoservers.ddns.net:19132:url:i.imgur.com/bgoM5jd.png"
+  - "§l&2Prison §eServer:xenoservers.ddns.net:19133:url:i.imgur.com/lLJWjfr.png"
+  - "&l&5Creative §eServer:xenoservers.ddns.net:19134:url:i.imgur.com/8pbNECc.png"
+  - "&l&4PvP §eServer:xenoservers.ddns.net:19135:url:i.imgur.com/trtUAqx.png"
+  - "&l&3Sky§cBlock §eServer:xenoservers.ddns.net:19136:url:i.imgur.com/8WbhbeY.png"

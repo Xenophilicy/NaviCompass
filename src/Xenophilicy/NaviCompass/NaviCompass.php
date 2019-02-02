@@ -46,6 +46,19 @@ class NaviCompass extends PluginBase implements Listener {
             $this->selectorSupport = false;
             $this->getLogger()->notice("§eSelector item support turned off in config! Disabling selector...");
         }
+        foreach ($this->servers as $server) {
+            $value = explode(":", $server);
+            if(isset($value[3])){
+                switch($value[3]){
+                    case'url':
+                        break;
+                    case'path':
+                        break;
+                    default:
+                        $this->getLogger()->notice("Invalid image type! Rank: ".$value[0]."§r Image type: ".$value[3]." not supported. ");
+                }
+            }
+        }
     }
 
     public function onCommand(CommandSender $sender, Command $command, string $label, array $args) : bool{
@@ -55,7 +68,7 @@ class NaviCompass extends PluginBase implements Listener {
             }
             else{
                 $sender->sendMessage(" ".$this->config->get("UI-Title"));
-                foreach ($this->servers as $server) {
+                foreach ($this->servers as $server){
                     $value = explode(":", $server);
                     $value = str_replace("&", "§", $value);
                     $sender->sendMessage("§eName: ".$value[0]."§r§e | IP: ".$value[1]." | Port: ".$value[2]);
@@ -83,7 +96,17 @@ class NaviCompass extends PluginBase implements Listener {
         foreach ($this->servers as $server) {
             $value = explode(":", $server);
             $value = str_replace("&", "§", $value);
-            $form->addButton($value[0]);
+            if(isset($value[3])){
+                if($value[3] == "url"){
+                    $form->addButton($value[0], 1, "https://".$value[4]);
+                }
+                if($value[3] == "path"){
+                    $form->addButton($value[0], 0, $value[4]);
+                }
+            }
+            else{
+                $form->addButton($value[0]);
+            }
         }
         $form->sendToPlayer($player);
     }
@@ -108,7 +131,7 @@ class NaviCompass extends PluginBase implements Listener {
         $items = $player->getInventory()->getContents();
         $selectorText = $this->config->get("Selector-Name");
         $selectorText = str_replace("&", "§", $selectorText);
-        foreach($items as $target) {
+        foreach ($items as $target) {
             if ($target->getCustomName() == "§o$selectorText") {
                 $player->getInventory()->remove($target);
             }
@@ -124,6 +147,19 @@ class NaviCompass extends PluginBase implements Listener {
             $item = $player->getInventory()->getItemInHand();
             if ($item->getCustomName() == "§o$selectorText" && $item->getId() == $itemType){
                 $this->serverList($player);
+            }
+        }
+    }
+
+    public function onDrop(PlayerDropItemEvent $event){
+        if ($this->selectorSupport == true) {
+            $player = $event->getPlayer();
+            $selectorText = $this->config->get("Selector-Name");
+            $selectorText = str_replace("&", "§", $selectorText);
+            $itemType = $this->config->get("Selector-Item");
+            $item = $player->getInventory()->getItemInHand();
+            if ($item->getCustomName() == "§o$selectorText" && $item->getId() == $itemType){
+                $event->setCancelled();
             }
         }
     }
