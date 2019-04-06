@@ -20,10 +20,9 @@ use pocketmine\command\{Command,CommandSender,ConsoleCommandSender};
 use pocketmine\item\enchantment\{Enchantment,EnchantmentInstance};
 use pocketmine\plugin\PluginBase;
 use pocketmine\event\Listener;
-use pocketmine\{Server,Player};
+use pocketmine\Player;
 use pocketmine\utils\Config;
 use pocketmine\item\Item;
-use pocketmine\inventory\Inventory;
 
 use Xenophilicy\NaviCompass\libs\jojoe77777\FormAPI\SimpleForm;
 
@@ -36,26 +35,70 @@ class NaviCompass extends PluginBase implements Listener {
         $this->saveDefaultConfig();
         $this->config = new Config($this->getDataFolder()."config.yml", Config::YAML);
         $this->config->getAll();
-        $this->servers = $this->config->get("Servers");
         $this->getLogger()->info("NaviCompass has been enabled!");
+        $version = $this->config->get("VERSION");
+        if($version != "1.0.2"){
+            $this->getLogger()->warning("You have updated NaviCompass but have an old config! Please delete your old config for new features to be enabled!");
+        }
         $selectorEnable = $this->config->get("Selector-Support");
         if ($selectorEnable == true) {
             $this->selectorSupport = true;
         }
-        else {
+        else{
             $this->selectorSupport = false;
             $this->getLogger()->notice("§eSelector item support turned off in config! Disabling selector...");
         }
-        foreach ($this->servers as $server) {
-            $value = explode(":", $server);
-            if(isset($value[3])){
-                switch($value[3]){
+        $transferType = $this->config->get("Transfer-Type");
+        switch($transferType){
+            case "External":
+                $this->tranType = 0;
+                break;
+            case "Internal":
+                if($this->config->get("World-CMD") == null || $this->config->get("World-CMD") == ""){
+                    $this->getLogger()->notice("Null world command string found, plugin default to External use!");
+                    $this->tranType = 0;
+                }
+                else{
+                    if($this->config->get("World-CMD-Mode") == "Player"){
+                        $this->tranType = 1;
+                        $this->cmdMode = 0;
+                    }
+                    elseif($this->config->get("World-CMD-Mode") == "Console"){
+                        $this->tranType = 1;
+                        $this->cmdMode = 1;
+                    }
+                    else{
+                        $this->getLogger()->notice("Null world command mode found, plugin default to External use!");
+                        $this->tranType = 0;
+                    }
+                }
+                break;
+            case false:
+            case null:
+                $this->getLogger()->notice("Null transfer type found, plugin default to External use!");
+                $this->tranType = 0;
+                break;
+            default:
+                $this->getLogger()->notice("Invalid transfer type! Input type: ".$transferType." not supported, plugin default to External use!");
+                $this->tranType = 0;
+        }
+        $this->list = $this->config->get("List");
+        foreach ($this->list as $target) {
+            $value = explode(":", $target);
+            if($this->tranType === 0){
+                $search = $value[3];
+            }
+            else{
+                $search = $value[2];
+            }
+            if(isset($search)){
+                switch($search){
                     case'url':
                         break;
                     case'path':
                         break;
                     default:
-                        $this->getLogger()->notice("Invalid image type! Rank: ".$value[0]."§r Image type: ".$value[3]." not supported. ");
+                        $this->getLogger()->warning("Invalid image type! Input: ".$value[0]."§r§e Image type: ".$search."§r§e not supported. ");
                 }
             }
         }
@@ -67,11 +110,20 @@ class NaviCompass extends PluginBase implements Listener {
                 $this->serverList($sender);
             }
             else{
-                $sender->sendMessage(" ".$this->config->get("UI-Title"));
-                foreach ($this->servers as $server){
-                    $value = explode(":", $server);
-                    $value = str_replace("&", "§", $value);
-                    $sender->sendMessage("§eName: ".$value[0]."§r§e | IP: ".$value[1]." | Port: ".$value[2]);
+                if($this->tranType == 0){
+                    $sender->sendMessage(" ".$this->config->get("UI-Title"));
+                    foreach ($this->list as $target){
+                        $value = explode(":", $target);
+                        $value = str_replace("&", "§", $value);
+                        $sender->sendMessage("§eName: ".$value[0]."§r§e | IP: ".$value[1]." | Port: ".$value[2]);
+                    }
+                }
+                elseif($this->tranType ==1){
+                    foreach ($this->list as $target){
+                        $value = explode(":", $target);
+                        $value = str_replace("&", "§", $value);
+                        $sender->sendMessage("§eName: ".$value[0]."§r§e | World: ".$value[1]);
+                    }
                 }
             }
         }
@@ -79,29 +131,49 @@ class NaviCompass extends PluginBase implements Listener {
     }
 
     public function serverList($player){
-        $formapi = $this->getServer()->getPluginManager()->getPlugin("FormAPI");
         $form = new SimpleForm(function (Player $player, $data){
             if ($data === null){
                 return;
             }
             else{
-                $value = explode(":", $this->servers[$data]);
+                $value = explode(":", $this->list[$data]);
                 $value = str_replace("&", "§", $value);
-                $this->getServer()->getCommandMap()->dispatch($player, 'transferserver '.$value[1].' '.$value[2]);
+                if($this->tranType == 0){
+                    $this->getServer()->getCommandMap()->dispatch($player, 'transferserver '.$value[1].' '.$value[2]);
+                }
+                elseif($this->tranType ==1){
+                    $cmdStr = $this->config->get("World-CMD");
+                    $cmdStr = str_replace("{player}", $player, $cmdStr);
+                    $cmdStr = str_replace("{world}", $value[1], $cmdStr);
+                    if ($this->cmdMode == 0){
+                        $this->getServer()->getCommandMap()->dispatch($player, $cmdStr);
+                    }
+                    else{
+                        $this->getServer()->getCommandMap()->dispatch(new ConsoleCommandSender(), $cmdStr);
+                    }
+                }
             }
             return true;
         });
         $form->setTitle($this->config->get("UI-Title"));
         $form->setContent($this->config->get("UI-Message"));
-        foreach ($this->servers as $server) {
-            $value = explode(":", $server);
+        foreach ($this->list as $target) {
+            $value = explode(":", $target);
             $value = str_replace("&", "§", $value);
-            if(isset($value[3])){
-                if($value[3] == "url"){
-                    $form->addButton($value[0], 1, "https://".$value[4]);
+            if($this->tranType === 0){
+                $search = $value[3];
+                $url = $value[4];
+            }
+            else{
+                $search = $value[2];
+                $url = $value[3];
+            }
+            if(isset($search)){
+                if($search == "url"){
+                    $form->addButton($value[0], 1, "https://".$url);
                 }
-                if($value[3] == "path"){
-                    $form->addButton($value[0], 0, $value[4]);
+                if($search == "path"){
+                    $form->addButton($value[0], 0, $url);
                 }
             }
             else{
