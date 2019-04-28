@@ -185,7 +185,7 @@ class NaviCompass extends PluginBase implements Listener {
                 }
             }
             else{
-                $form->addButton($value[0]);
+                $form->addButton($value[0]."\n§r§o§8Tap to transfer");
             }
         }
         $form->sendToPlayer($player);
