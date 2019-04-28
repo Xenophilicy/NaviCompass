@@ -37,7 +37,7 @@ class NaviCompass extends PluginBase implements Listener {
         $this->config->getAll();
         $this->getLogger()->info("NaviCompass has been enabled!");
         $version = $this->config->get("VERSION");
-        if($version != "1.0.2"){
+        if($version != "1.0.3"){
             $this->getLogger()->warning("You have updated NaviCompass but have an old config! Please delete your old config for new features to be enabled!");
         }
         $selectorEnable = $this->config->get("Selector-Support");
@@ -84,9 +84,12 @@ class NaviCompass extends PluginBase implements Listener {
         }
         $this->list = $this->config->get("List");
         foreach ($this->list as $target) {
+            unset($search);
             $value = explode(":", $target);
             if($this->tranType === 0){
-                $search = $value[3];
+                if(isset($value[3])){
+                    $search = $value[3];
+                }
             }
             else{
                 $search = $value[2];
@@ -160,20 +163,25 @@ class NaviCompass extends PluginBase implements Listener {
         foreach ($this->list as $target) {
             $value = explode(":", $target);
             $value = str_replace("&", "§", $value);
+            unset($search);
             if($this->tranType === 0){
-                $search = $value[3];
-                $url = $value[4];
+                if(isset($value[3])){
+                    $search = $value[3];
+                    $file = $value[4];
+                }
             }
             else{
-                $search = $value[2];
-                $url = $value[3];
+                if(isset($value[2])){
+                    $search = $value[2];
+                    $file = $value[3];
+                }
             }
             if(isset($search)){
                 if($search == "url"){
-                    $form->addButton($value[0], 1, "https://".$url);
+                    $form->addButton($value[0]."\n§r§o§8Tap to transfer", 1, "http://".$file);
                 }
                 if($search == "path"){
-                    $form->addButton($value[0], 0, $url);
+                    $form->addButton($value[0]."\n§r§o§8Tap to transfer", 0, $file);
                 }
             }
             else{
@@ -194,7 +202,8 @@ class NaviCompass extends PluginBase implements Listener {
             $item = Item::get($itemType);
             $item->setCustomName("§o$selectorText");
             $item->addEnchantment($enchInstance);
-            $player->getInventory()->addItem($item);
+            $slot = $itemType = $this->config->get("Selector-Slot");
+            $player->getInventory()->setItem($slot,$item,true);
         }
     }
 

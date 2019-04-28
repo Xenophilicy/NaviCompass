@@ -11,7 +11,7 @@
 #                                         $$ |                                      /  \__$$ |
 #                                         $$ |                                      $$    $$/ 
 #                                         $$/                                        $$$$$$/       
-VERSION: "1.0.2" # Internal use only
+VERSION: "1.0.3" # Internal use only
 
 # Choose your transfer type:
 # "External" will use `transferserver` to move players between SERVERS
@@ -33,6 +33,10 @@ Selector-Support: true
 
 # Choose what item the server selector should be
 Selector-Item: 345
+
+# Choose what slot the selector should appear in
+# The range for this input is 0-35
+Selector-Slot: 0
 
 # This is the text that will show on the selector in the player's inventory!
 Selector-Name: "§l§aServer Selector"
