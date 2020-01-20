@@ -11,53 +11,59 @@
 #                                         $$ |                                      /  \__$$ |
 #                                         $$ |                                      $$    $$/ 
 #                                         $$/                                        $$$$$$/       
-VERSION: "1.0.3" # Internal use only
+VERSION: "1.0.4" # Internal use only
 
 # Choose your transfer type:
-# "External" will use `transferserver` to move players between SERVERS
-# "Internal" will use your preset command string to move players between WORLDS
-Transfer-Type: "External"
+# "external" will use an IP address and port to move players between SERVERS
+# "internal" will use your preset command string to move players between WORLDS
+# "hybrid" will include both transfer types
+Transfer-Type: "hybrid"
 
 # This is the command string that will be used to transfer players between WORLDS
-# Don't worry about this if you're using the External transfer type
+# Don't worry about this if you're only using the EXTERNAL transfer type
 # Use '{player}' for the player's name
 # Use '{world}' for the world name
 World-CMD: "multiworld tp {world} {player}"
 
 # This is where you choose if world command should be run by the player or the console
-# Options are: "Console" and "Player"
-World-CMD-Mode: "Console"
+# Don't worry about this if you're only using the EXTERNAL transfer type
+# Options are: "console" and "player"
+World-CMD-Mode: "console"
 
-# Choose whether the selector item should be enabled
-Selector-Support: true
+Selector:
+  # Choose whether the selector item should be enabled
+  Enabled: true
 
-# Choose what item the server selector should be
-Selector-Item: 345
+  # Choose what item the server selector should be
+  # Default item is Compass (345)
+  Item: 345
 
-# Choose what slot the selector should appear in
-# The range for this input is 0-35
-Selector-Slot: 0
+  # Choose what slot of the player's inventory the selector should appear in
+  # The range for this input is 0-35 (0-8 are the player's hotbar)
+  Slot: 0
 
-# This is the text that will show on the selector in the player's inventory!
-Selector-Name: "§l§aServer Selector"
+  # This is the text that will show on the selector in the player's inventory
+  Name: "§l§aServer Selector"
 
-# This is the title of the transfer UI
-# Don't worry about this if you're using the Internal transfer type
-UI-Title: "§9Server List"
+UI:
+  # This is the title of the transfer UI
+  Title: "§9Server List"
 
-# This is the message the will show under your title on the transfer UI
-# Don't worry about this if you're using the Internal transfer type
-UI-Message: "§aChoose a server to transfer to!"
+  # This is the message the will show under your title on the transfer UI
+  Message: "§aChoose a server to transfer to!"
+
+  # This is the message displayed under each button 
+  Button-Subtext: "§r§o§8Tap to transfer"
 
 # This is where you list your servers or worlds to be displayed on the transfer UI
 # You can use '§' and '&' on the labels to style your servers or worlds inside the UI
 # For images, use 'url' or 'path' to show an image in the menus (or leave blank to disable)
-# Note: If you are using a URL, do NOT include the 'https://' or 'http://' in the link!
-# If you are using the Internal transfer type, the world name will be taken from the 'WorldName' key
+# NOTE: If you are using a URL, do NOT include the 'https://' or 'http://' in the link!
+# If you are using the INTERNAL transfer type, the world name will be taken from the 'WorldTitle' key
 
 # Add as many servers or worlds as you'd like:
-# Add servers using this format → ServerTitle:ServerIP:ServerPort:ImageType:Path/URL
-# Add worlds using this format → WorldTitle:WorldAlias:ImageType:Path/URL
+# Add SERVERS using this format → ext:ServerTitle:ServerIP:ServerPort:ImageType:Path/URL
+# Add WORLDS using this format → int:WorldTitle:WorldAlias:ImageType:Path/URL
 List:
-  - "§l&2Prison §eServer:play.xenoservers.net:19133:url:i.imgur.com/lLJWjfr.png" # ← External server example
-#  - "&l&5Creative:creative:url:i.imgur.com/8pbNECc.png" ← Internal world example
+  - "ext:§l§2Prison §eServer:play.xenoservers.net:19133:url:i.imgur.com/lLJWjfr.png" # ← EXTERNAL server example
+  - "int:§l§5Creative:creative:url:i.imgur.com/8pbNECc.png" # ← INTERNAL world example

@@ -11,7 +11,7 @@
 # $$/   $$/  $$$$$$$/ $$/   $$/  $$$$$$/  $$$$$$$/  $$/   $$/ $$/ $$/ $$/  $$$$$$$/  $$$$$$$ |
 #                                         $$ |                                      /  \__$$ |
 #                                         $$ |                                      $$    $$/ 
-#                                         $$/                                        $$$$$$/           
+#                                         $$/                                        $$$$$$/
 
 namespace Xenophilicy\NaviCompass;
 
@@ -21,7 +21,7 @@ use pocketmine\item\enchantment\{Enchantment,EnchantmentInstance};
 use pocketmine\plugin\PluginBase;
 use pocketmine\event\Listener;
 use pocketmine\Player;
-use pocketmine\utils\Config;
+use pocketmine\utils\{Config,TextFormat as TF};
 use pocketmine\item\Item;
 
 use Xenophilicy\NaviCompass\libs\jojoe77777\FormAPI\SimpleForm;
@@ -29,6 +29,7 @@ use Xenophilicy\NaviCompass\libs\jojoe77777\FormAPI\SimpleForm;
 class NaviCompass extends PluginBase implements Listener {
 
     private $config;
+    private $cmdMode;
 
     public function onEnable(){
         $this->getServer()->getPluginManager()->registerEvents($this, $this);
@@ -37,71 +38,79 @@ class NaviCompass extends PluginBase implements Listener {
         $this->config->getAll();
         $this->getLogger()->info("NaviCompass has been enabled!");
         $version = $this->config->get("VERSION");
-        if($version != "1.0.3"){
+        if($version != "1.0.4"){
             $this->getLogger()->warning("You have updated NaviCompass but have an old config! Please delete your old config for new features to be enabled!");
         }
-        $selectorEnable = $this->config->get("Selector-Support");
+        $selectorEnable = $this->config->getNested("Selector.Enabled");
         if ($selectorEnable == true) {
             $this->selectorSupport = true;
         }
         else{
             $this->selectorSupport = false;
-            $this->getLogger()->notice("§eSelector item support turned off in config! Disabling selector...");
+            $this->getLogger()->info("Selector item disabled in config...");
         }
         $transferType = $this->config->get("Transfer-Type");
-        switch($transferType){
-            case "External":
-                $this->tranType = 0;
+        switch(strtolower($transferType)){
+            case "external":
+                $this->externalLimit = false;
                 break;
-            case "Internal":
+            case "hybrid":
+            case "internal":
                 if($this->config->get("World-CMD") == null || $this->config->get("World-CMD") == ""){
-                    $this->getLogger()->notice("Null world command string found, plugin default to External use!");
-                    $this->tranType = 0;
+                    $this->getLogger()->critical("Null world command string found, limiting to external use!");
+                    $this->externalLimit = true;
                 }
                 else{
-                    if($this->config->get("World-CMD-Mode") == "Player"){
-                        $this->tranType = 1;
+                    $mode = $this->config->get("World-CMD-Mode");
+                    if(strtolower($mode) == "player"){
+                        $this->externalLimit = false;
                         $this->cmdMode = 0;
                     }
-                    elseif($this->config->get("World-CMD-Mode") == "Console"){
-                        $this->tranType = 1;
+                    elseif(strtolower($mode) == "console"){
+                        $this->externalLimit = false;
                         $this->cmdMode = 1;
                     }
                     else{
-                        $this->getLogger()->notice("Null world command mode found, plugin default to External use!");
-                        $this->tranType = 0;
+                        $this->getLogger()->critical("Null world command mode found, limiting to external use!");
+                        $this->externalLimit = true;
                     }
                 }
                 break;
             case false:
             case null:
-                $this->getLogger()->notice("Null transfer type found, plugin default to External use!");
-                $this->tranType = 0;
-                break;
+                $this->getLogger()->critical("Null transfer type found, disabling plugin!");
+                $this->getServer()->getPluginManager()->disablePlugin($this);
+                return;
             default:
-                $this->getLogger()->notice("Invalid transfer type! Input type: ".$transferType." not supported, plugin default to External use!");
-                $this->tranType = 0;
+                $this->getLogger()->critical("Invalid transfer type! Input type: ".$transferType." not supported, disabling plugin!");
+                $this->getServer()->getPluginManager()->disablePlugin($this);
+                return;
         }
         $this->list = $this->config->get("List");
         foreach ($this->list as $target) {
             unset($search);
             $value = explode(":", $target);
-            if($this->tranType === 0){
-                if(isset($value[3])){
-                    $search = $value[3];
+            if(strtolower($value[0]) === "ext"){
+                if(isset($value[4])){
+                    $search = $value[4];
                 }
             }
-            else{
-                $search = $value[2];
+            elseif(strtolower($value[0]) === "int"){
+                if(isset($value[3])){
+                    $search = $value[3];
+                    if(!isset($value[4])){
+                        $this->getLogger()->warning("Null path/URL! Input: ".$value[1]);
+                    }
+                }
             }
             if(isset($search)){
-                switch($search){
+                switch(strtolower($search)){
                     case'url':
                         break;
                     case'path':
                         break;
                     default:
-                        $this->getLogger()->warning("Invalid image type! Input: ".$value[0]."§r§e Image type: ".$search."§r§e not supported. ");
+                        $this->getLogger()->warning("Invalid image type! Input: ".$value[1].TF::RESET.TF::YELLOW." Image type: ".$search.TF::RESET.TF::YELLOW." not supported. ");
                 }
             }
         }
@@ -113,19 +122,15 @@ class NaviCompass extends PluginBase implements Listener {
                 $this->serverList($sender);
             }
             else{
-                if($this->tranType == 0){
-                    $sender->sendMessage(" ".$this->config->get("UI-Title"));
-                    foreach ($this->list as $target){
-                        $value = explode(":", $target);
-                        $value = str_replace("&", "§", $value);
-                        $sender->sendMessage("§eName: ".$value[0]."§r§e | IP: ".$value[1]." | Port: ".$value[2]);
+                $sender->sendMessage(" ".$this->config->getNested("UI.Title"));
+                foreach ($this->list as $target){
+                    $value = explode(":", $target);
+                    $value = str_replace("&", "§", $value);
+                    if(strtolower($value[0]) == "ext"){
+                        $sender->sendMessage(TF::YELLOW."Name: ".$value[1].TF::RESET.TF::YELLOW." | IP: ".$value[2]." | Port: ".$value[3]);
                     }
-                }
-                elseif($this->tranType ==1){
-                    foreach ($this->list as $target){
-                        $value = explode(":", $target);
-                        $value = str_replace("&", "§", $value);
-                        $sender->sendMessage("§eName: ".$value[0]."§r§e | World: ".$value[1]);
+                    else{
+                        $sender->sendMessage(TF::YELLOW."Name: ".$value[1].TF::RESET.TF::YELLOW." | Alias: ".$value[2]);
                     }
                 }
             }
@@ -141,13 +146,13 @@ class NaviCompass extends PluginBase implements Listener {
             else{
                 $value = explode(":", $this->list[$data]);
                 $value = str_replace("&", "§", $value);
-                if($this->tranType == 0){
-                    $this->getServer()->getCommandMap()->dispatch($player, 'transferserver '.$value[1].' '.$value[2]);
+                if(strtolower($value[0]) == "ext"){
+                    $player->transfer($value[2],$value[3]);
                 }
-                elseif($this->tranType ==1){
+                else{
                     $cmdStr = $this->config->get("World-CMD");
                     $cmdStr = str_replace("{player}", $player, $cmdStr);
-                    $cmdStr = str_replace("{world}", $value[1], $cmdStr);
+                    $cmdStr = str_replace("{world}", $value[2], $cmdStr);
                     if ($this->cmdMode == 0){
                         $this->getServer()->getCommandMap()->dispatch($player, $cmdStr);
                     }
@@ -158,34 +163,35 @@ class NaviCompass extends PluginBase implements Listener {
             }
             return true;
         });
-        $form->setTitle($this->config->get("UI-Title"));
-        $form->setContent($this->config->get("UI-Message"));
+        $form->setTitle($this->config->get("UI.Title"));
+        $form->setContent($this->config->get("UI.Message"));
+        $subtext = $this->config->getNested("UI.Button-Subtext");
         foreach ($this->list as $target) {
             $value = explode(":", $target);
             $value = str_replace("&", "§", $value);
             unset($search);
-            if($this->tranType === 0){
+            if(strtolower($value[0]) == "ext"){
+                if(isset($value[4])){
+                    $search = $value[4];
+                    $file = $value[5];
+                }
+            }
+            else{
                 if(isset($value[3])){
                     $search = $value[3];
                     $file = $value[4];
                 }
             }
-            else{
-                if(isset($value[2])){
-                    $search = $value[2];
-                    $file = $value[3];
-                }
-            }
             if(isset($search)){
                 if($search == "url"){
-                    $form->addButton($value[0]."\n§r§o§8Tap to transfer", 1, "http://".$file);
+                    $form->addButton($value[1]."\n".$subtext, 1, "http://".$file);
                 }
                 if($search == "path"){
-                    $form->addButton($value[0]."\n§r§o§8Tap to transfer", 0, $file);
+                    $form->addButton($value[1]."\n".$subtext, 0, $file);
                 }
             }
             else{
-                $form->addButton($value[0]."\n§r§o§8Tap to transfer");
+                $form->addButton($value[1]."\n".$subtext);
             }
         }
         $form->sendToPlayer($player);
@@ -194,15 +200,15 @@ class NaviCompass extends PluginBase implements Listener {
     public function onJoin(PlayerJoinEvent $event){
         if ($this->selectorSupport == true) {
             $player = $event->getPlayer();
-            $selectorText = $this->config->get("Selector-Name");
+            $selectorText = $this->config->getNested("Selector.Name");
             $selectorText = str_replace("&", "§", $selectorText);
             $enchantment = Enchantment::getEnchantment(0);
             $enchInstance = new EnchantmentInstance($enchantment, 1);
-            $itemType = $this->config->get("Selector-Item");
+            $itemType = $this->config->getNested("Selector.Item");
             $item = Item::get($itemType);
-            $item->setCustomName("§o$selectorText");
+            $item->setCustomName(TF::ITALIC."$selectorText");
             $item->addEnchantment($enchInstance);
-            $slot = $itemType = $this->config->get("Selector-Slot");
+            $slot = $itemType = $this->config->getNested("Selector.Slot");
             $player->getInventory()->setItem($slot,$item,true);
         }
     }
@@ -210,10 +216,10 @@ class NaviCompass extends PluginBase implements Listener {
     public function onQuit(PlayerQuitEvent $event){
         $player = $event->getPlayer();
         $items = $player->getInventory()->getContents();
-        $selectorText = $this->config->get("Selector-Name");
+        $selectorText = $this->config->getNested("Selector.Name");
         $selectorText = str_replace("&", "§", $selectorText);
         foreach ($items as $target) {
-            if ($target->getCustomName() == "§o$selectorText") {
+            if ($target->getCustomName() == TF::ITALIC."$selectorText") {
                 $player->getInventory()->remove($target);
             }
         }
@@ -222,11 +228,11 @@ class NaviCompass extends PluginBase implements Listener {
     public function onInteract(PlayerInteractEvent $event){
         if ($this->selectorSupport == true) {
             $player = $event->getPlayer();
-            $selectorText = $this->config->get("Selector-Name");
+            $selectorText = $this->config->getNested("Selector.Name");
             $selectorText = str_replace("&", "§", $selectorText);
-            $itemType = $this->config->get("Selector-Item");
+            $itemType = $this->config->getNested("Selector.Item");
             $item = $player->getInventory()->getItemInHand();
-            if ($item->getCustomName() == "§o$selectorText" && $item->getId() == $itemType){
+            if ($item->getCustomName() == TF::ITALIC."$selectorText" && $item->getId() == $itemType){
                 $this->serverList($player);
             }
         }
@@ -235,11 +241,11 @@ class NaviCompass extends PluginBase implements Listener {
     public function onDrop(PlayerDropItemEvent $event){
         if ($this->selectorSupport == true) {
             $player = $event->getPlayer();
-            $selectorText = $this->config->get("Selector-Name");
+            $selectorText = $this->config->getNested("Selector.Name");
             $selectorText = str_replace("&", "§", $selectorText);
-            $itemType = $this->config->get("Selector-Item");
+            $itemType = $this->config->getNested("Selector.Item");
             $item = $player->getInventory()->getItemInHand();
-            if ($item->getCustomName() == "§o$selectorText" && $item->getId() == $itemType){
+            if ($item->getCustomName() == TF::ITALIC."$selectorText" && $item->getId() == $itemType){
                 $event->setCancelled();
             }
         }
