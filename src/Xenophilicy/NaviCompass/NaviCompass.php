@@ -36,7 +36,6 @@ class NaviCompass extends PluginBase implements Listener {
         $this->saveDefaultConfig();
         $this->config = new Config($this->getDataFolder()."config.yml", Config::YAML);
         $this->config->getAll();
-        $this->getLogger()->info("NaviCompass has been enabled!");
         $version = $this->config->get("VERSION");
         if($version != "1.0.4"){
             $this->getLogger()->warning("You have updated NaviCompass but have an old config! Please delete your old config for new features to be enabled!");

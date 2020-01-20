@@ -49,10 +49,10 @@ UI:
   # This is the title of the transfer UI
   Title: "§9Server List"
 
-  # This is the message the will show under your title on the transfer UI
+  # This is the message that will show under your title on the transfer UI
   Message: "§aChoose a server to transfer to!"
 
-  # This is the message displayed under each button 
+  # This is the message displayed under each button
   Button-Subtext: "§r§o§8Tap to transfer"
 
 # This is where you list your servers or worlds to be displayed on the transfer UI
