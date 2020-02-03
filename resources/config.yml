@@ -69,6 +69,7 @@ UI:
 # For images, use 'url' or 'path' to show an image in the menus (or leave blank to disable)
 # NOTE: If you are using a URL, do NOT include the 'https://' or 'http://' in the link!
 # If you are using the INTERNAL transfer type, the world alias will be used in the transfer command
+# You must also be sure that the world alias is EXACTLY the same as the world's folder name
 
 # Add as many servers or worlds as you'd like:
 # Add SERVERS using this format → ext:ServerTitle:ServerIP:ServerPort:ImageType:Path/URL
