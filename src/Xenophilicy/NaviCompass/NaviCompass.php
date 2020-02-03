@@ -25,6 +25,7 @@ use pocketmine\utils\{Config,TextFormat as TF};
 use pocketmine\item\Item;
 
 use Xenophilicy\NaviCompass\libs\jojoe77777\FormAPI\SimpleForm;
+use Xenophilicy\NaviCompass\Query;
 
 class NaviCompass extends PluginBase implements Listener {
 
@@ -37,7 +38,7 @@ class NaviCompass extends PluginBase implements Listener {
         $this->config = new Config($this->getDataFolder()."config.yml", Config::YAML);
         $this->config->getAll();
         $version = $this->config->get("VERSION");
-        if($version != "1.0.4"){
+        if($version != "2.0.0"){
             $this->getLogger()->warning("You have updated NaviCompass but have an old config! Please delete your old config for new features to be enabled!");
         }
         $selectorEnable = $this->config->getNested("Selector.Enabled");
@@ -85,6 +86,13 @@ class NaviCompass extends PluginBase implements Listener {
                 $this->getServer()->getPluginManager()->disablePlugin($this);
                 return;
         }
+        $levels = scandir($this->getServer()->getDataPath()."worlds/");
+        foreach($levels as $level){
+            if($level === "." || $level === ".."){
+                continue;
+            }
+            $this->getServer()->loadLevel($level); 
+        }
         $this->list = $this->config->get("List");
         foreach ($this->list as $target) {
             unset($search);
@@ -95,6 +103,19 @@ class NaviCompass extends PluginBase implements Listener {
                 }
             }
             elseif(strtolower($value[0]) === "int"){
+                $level = $this->getServer()->getLevelByName($value[2]);
+                if($level === null){
+                    if($value[2] == "xenoCreative"){
+                        $this->getLogger()->critical("You are using a default server/world configuration! Please change this to YOUR servers/worlds for the plugin to function properly! Plugin will remain disabled until default config is changed...");
+                        $this->getServer()->getPluginManager()->disablePlugin($this);
+                        return;
+                    }
+                    else{
+                        $this->getLogger()->critical("Invalid world name! Name: ".$value[2]." was not found, disabling plugin! Be sure you use the name of the world folder for the 'WorldAlias' key in the config!");
+                        $this->getServer()->getPluginManager()->disablePlugin($this);
+                        return;
+                    }
+                }
                 if(isset($value[3])){
                     $search = $value[3];
                     if(!isset($value[4])){
@@ -164,18 +185,35 @@ class NaviCompass extends PluginBase implements Listener {
         });
         $form->setTitle($this->config->get("UI.Title"));
         $form->setContent($this->config->get("UI.Message"));
-        $subtext = $this->config->getNested("UI.Button-Subtext");
         foreach ($this->list as $target) {
             $value = explode(":", $target);
             $value = str_replace("&", "§", $value);
             unset($search);
             if(strtolower($value[0]) == "ext"){
+                $subtext = $this->config->getNested("UI.Server-Button-Subtext");
+                $queryResult = $this->queryServer($value[2],$value[3]);
+                if($queryResult[0] === "online"){
+                    $subtext = str_replace("{status}", TF::GREEN."Online".TF::RESET, $subtext);
+                    $subtext = str_replace("{current-players}", $queryResult[1], $subtext);
+                    $subtext = str_replace("{max-players}", $queryResult[2], $subtext);
+                }
+                else{
+                    $subtext = str_replace("{status}", TF::RED."Offline".TF::RESET, $subtext);
+                    $subtext = str_replace("{current-players}", "-", $subtext);
+                    $subtext = str_replace("{max-players}", "-", $subtext);
+                }
                 if(isset($value[4])){
                     $search = $value[4];
                     $file = $value[5];
                 }
             }
             else{
+                $subtext = $this->config->getNested("UI.World-Button-Subtext");
+                $worldPlayerCount = 0;
+                foreach($this->getServer()->getLevelByName($value[2])->getPlayers() as $player){
+                    $worldPlayerCount += 1;
+                }
+                $subtext = str_replace("{current-players}", $worldPlayerCount, $subtext);
                 if(isset($value[3])){
                     $search = $value[3];
                     $file = $value[4];
@@ -194,6 +232,16 @@ class NaviCompass extends PluginBase implements Listener {
             }
         }
         $form->sendToPlayer($player);
+    }
+
+    public function queryServer(string $ip, int $port){
+        $query = new Query($ip, $port);
+        if($query->status() == "online"){
+            return ["online",$query->getPlayersCount(),$query->getServerMaxPlayers()];
+        }
+        else{
+            return ["offline",0,0];
+        }
     }
 
     public function onJoin(PlayerJoinEvent $event){

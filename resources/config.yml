@@ -11,7 +11,7 @@
 #                                         $$ |                                      /  \__$$ |
 #                                         $$ |                                      $$    $$/ 
 #                                         $$/                                        $$$$$$/       
-VERSION: "1.0.4" # Internal use only
+VERSION: "2.0.0" # Internal use only
 
 # Choose your transfer type:
 # "external" will use an IP address and port to move players between SERVERS
@@ -52,18 +52,27 @@ UI:
   # This is the message that will show under your title on the transfer UI
   Message: "§aChoose a server to transfer to!"
 
-  # This is the message displayed under each button
-  Button-Subtext: "§r§o§8Tap to transfer"
+  # This is the message displayed under each SERVER button
+  # Don't worry about this if you're only using the INTERNAL transfer type
+  # Use '{current-players}' for the server's current player count
+  # Use '{max-players}' for the server's max player count
+  # Use '{status}' to show whether the server is online or offline ('Online' will show as green; 'Offline' will show as red)
+  Server-Button-Subtext: "§r{status} §8(§a{current-players}§8/§b{max-players}§8)"
+
+  # This is the message displayed under each WORLD button
+  # Don't worry about this if you're only using the EXTERNAL transfer type
+  # Use '{current-players}' for the world's current player count
+  World-Button-Subtext: "§r§o§8Tap to Teleport §8(§a{current-players} §eplayer(s)§8)"
 
 # This is where you list your servers or worlds to be displayed on the transfer UI
 # You can use '§' and '&' on the labels to style your servers or worlds inside the UI
 # For images, use 'url' or 'path' to show an image in the menus (or leave blank to disable)
 # NOTE: If you are using a URL, do NOT include the 'https://' or 'http://' in the link!
-# If you are using the INTERNAL transfer type, the world name will be taken from the 'WorldTitle' key
+# If you are using the INTERNAL transfer type, the world alias will be used in the transfer command
 
 # Add as many servers or worlds as you'd like:
 # Add SERVERS using this format → ext:ServerTitle:ServerIP:ServerPort:ImageType:Path/URL
 # Add WORLDS using this format → int:WorldTitle:WorldAlias:ImageType:Path/URL
 List:
   - "ext:§l§2Prison §eServer:play.xenoservers.net:19133:url:i.imgur.com/lLJWjfr.png" # ← EXTERNAL server example
-  - "int:§l§5Creative:creative:url:i.imgur.com/8pbNECc.png" # ← INTERNAL world example
+  - "int:§l§5Creative:xenoCreative:url:i.imgur.com/8pbNECc.png" # ← INTERNAL world example
