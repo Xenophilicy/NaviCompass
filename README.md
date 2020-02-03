@@ -3,7 +3,7 @@
 [![HitCount](http://hits.dwyl.io/Xenophilicy/NaviCompass.svg)](http://hits.dwyl.io/Xenophilicy/NaviCompass)
 ![](https://img.shields.io/discord/490677165289897995.svg?style=flat-square)
 
-# [![Xenophilicy](https://i.imgur.com/I5qvAiT.png)]()
+# [![Xenophilicy](https://file.xenoservers.net/Resources/GitHub-Resources/navicompass/screenshot.png)]()
 
 ## Information
 With this plugin you can allow your players to transfer between your server network and worlds with simplicity. **NaviCompass** is a plugin that uses **FormAPI** to easily display your servers and server worlds listed in a simple UI. Its simple, all you need to do is enter the server IPs and Ports or the names of your worlds, along with a label to show up as the name in the UI, all inside the config.yml file. After that, the plugin will do the rest and you're good to go! Players will either have option to interact with the selector item (can be customized in the config.yml file), or type */servers* in chat to access the UI. Server networks simplified!

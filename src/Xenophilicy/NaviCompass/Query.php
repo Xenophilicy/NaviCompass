@@ -1,6 +1,19 @@
 <?php
+# EDITED BY:
+#  __    __                                          __        __  __  __                     
+# /  |  /  |                                        /  |      /  |/  |/  |                    
+# $$ |  $$ |  ______   _______    ______    ______  $$ |____  $$/ $$ |$$/   _______  __    __ 
+# $$  \/$$/  /      \ /       \  /      \  /      \ $$      \ /  |$$ |/  | /       |/  |  /  |
+#  $$  $$<  /$$$$$$  |$$$$$$$  |/$$$$$$  |/$$$$$$  |$$$$$$$  |$$ |$$ |$$ |/$$$$$$$/ $$ |  $$ |
+#   $$$$  \ $$    $$ |$$ |  $$ |$$ |  $$ |$$ |  $$ |$$ |  $$ |$$ |$$ |$$ |$$ |      $$ |  $$ |
+#  $$ /$$  |$$$$$$$$/ $$ |  $$ |$$ \__$$ |$$ |__$$ |$$ |  $$ |$$ |$$ |$$ |$$ \_____ $$ \__$$ |
+# $$ |  $$ |$$       |$$ |  $$ |$$    $$/ $$    $$/ $$ |  $$ |$$ |$$ |$$ |$$       |$$    $$ |
+# $$/   $$/  $$$$$$$/ $$/   $$/  $$$$$$/  $$$$$$$/  $$/   $$/ $$/ $$/ $$/  $$$$$$$/  $$$$$$$ |
+#                                         $$ |                                      /  \__$$ |
+#                                         $$ |                                      $$    $$/ 
+#                                         $$/                                        $$$$$$/
 
-// Edited GitHub Gist by xBeastMode → https://gist.github.com/xBeastMode/89a9d85c21ec5f42f14db49550ea8e5c
+// This is an edited GitHub Gist by xBeastMode → https://gist.github.com/xBeastMode/89a9d85c21ec5f42f14db49550ea8e5c
 
 namespace Xenophilicy\NaviCompass;
 
@@ -44,13 +57,17 @@ class Query{
     }
 
     private function UT3Query($host, $port){
-        $socket = @fsockopen("udp://" . $host, $port);
+        $socket = @fsockopen("udp://" . $host, $port, $timeout=1);
+        stream_set_timeout($socket, 1);
         if (!$socket)
             return null;
         $online = @fwrite($socket, "\xFE\xFD\x09\x10\x20\x30\x40\xFF\xFF\xFF\x01");
         if (!$online)
             return null;
         $challenge = @fread($socket, 1400);
+        $res = stream_get_meta_data($socket);
+        if ($res['timed_out'])
+            return null;
         if (!$challenge)
             return null;
         $challenge = substr(preg_replace("/[^0-9-]/si", "", $challenge), 1);
@@ -65,6 +82,7 @@ class Query{
         $response = explode("\0", $response);
         array_pop($response);
         array_pop($response);
+        @fclose($socket);
         return $response;
     }
 }
