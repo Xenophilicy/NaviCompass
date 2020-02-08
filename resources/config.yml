@@ -75,5 +75,5 @@ UI:
 # Add SERVERS using this format → ext:ServerTitle:ServerIP:ServerPort:ImageType:Path/URL
 # Add WORLDS using this format → int:WorldTitle:WorldAlias:ImageType:Path/URL
 List:
-  - "ext:§l§2Prison §eServer:play.xenoservers.net:19133:url:file.xenoservers.net/Resources/GitHub-Resources/navicompass/lobby.png" # ← EXTERNAL server example
+  - "ext:§l§2Prison §eServer:play.xenoservers.net:19133:url:file.xenoservers.net/Resources/GitHub-Resources/navicompass/prison.png" # ← EXTERNAL server example
   - "int:§l§5Creative:xenoCreative:url:file.xenoservers.net/Resources/GitHub-Resources/navicompass/creative.png" # ← INTERNAL world example

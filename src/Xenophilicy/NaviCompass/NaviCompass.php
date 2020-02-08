@@ -25,11 +25,12 @@ use pocketmine\utils\{Config,TextFormat as TF};
 use pocketmine\item\Item;
 
 use Xenophilicy\NaviCompass\libs\jojoe77777\FormAPI\SimpleForm;
-use Xenophilicy\NaviCompass\Query;
+use Xenophilicy\NaviCompass\QueryTask;
 
-class NaviCompass extends PluginBase implements Listener {
+class NaviCompass extends PluginBase implements Listener{
 
     private $config;
+    private $queryResult;
     private $cmdMode;
 
     public function onEnable(){
@@ -101,6 +102,8 @@ class NaviCompass extends PluginBase implements Listener {
                 if(isset($value[4])){
                     $search = $value[4];
                 }
+                $this->queryResults[$value[2].":".$value[3]] = [];
+                $this->startQueryTask($value[2],$value[3]);
             }
             elseif(strtolower($value[0]) === "int"){
                 $level = $this->getServer()->getLevelByName($value[2]);
@@ -135,6 +138,14 @@ class NaviCompass extends PluginBase implements Listener {
             }
         }
     }
+
+    private function startQueryTask(string $host, int $port){
+        $this->getScheduler()->scheduleRepeatingTask(new QueryTaskCaller($this, $host, $port), 100);
+    }
+
+    public function queryTaskCallback($result, string $host, int $port){
+		$this->queryResults[$host.":".$port] = $result;
+	}
 
     public function onCommand(CommandSender $sender, Command $command, string $label, array $args) : bool{
         if ($command->getName() == "servers"){
@@ -191,7 +202,7 @@ class NaviCompass extends PluginBase implements Listener {
             unset($search);
             if(strtolower($value[0]) == "ext"){
                 $subtext = $this->config->getNested("UI.Server-Button-Subtext");
-                $queryResult = $this->queryServer($value[2],$value[3]);
+                $queryResult = $this->queryResults[$value[2].":".$value[3]];
                 if($queryResult[0] === "online"){
                     $subtext = str_replace("{status}", TF::GREEN."Online".TF::RESET, $subtext);
                     $subtext = str_replace("{current-players}", $queryResult[1], $subtext);
@@ -232,16 +243,6 @@ class NaviCompass extends PluginBase implements Listener {
             }
         }
         $form->sendToPlayer($player);
-    }
-
-    public function queryServer(string $ip, int $port){
-        $query = new Query($ip, $port);
-        if($query->status() == "online"){
-            return ["online",$query->getPlayersCount(),$query->getServerMaxPlayers()];
-        }
-        else{
-            return ["offline",0,0];
-        }
     }
 
     public function onJoin(PlayerJoinEvent $event){

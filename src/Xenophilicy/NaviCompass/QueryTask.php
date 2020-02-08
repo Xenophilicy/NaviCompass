@@ -1,5 +1,5 @@
 <?php
-# EDITED BY:
+# MADE BY:
 #  __    __                                          __        __  __  __                     
 # /  |  /  |                                        /  |      /  |/  |/  |                    
 # $$ |  $$ |  ______   _______    ______    ______  $$ |____  $$/ $$ |$$/   _______  __    __ 
@@ -13,50 +13,41 @@
 #                                         $$ |                                      $$    $$/ 
 #                                         $$/                                        $$$$$$/
 
-// This is an edited GitHub Gist by xBeastMode → https://gist.github.com/xBeastMode/89a9d85c21ec5f42f14db49550ea8e5c
-
 namespace Xenophilicy\NaviCompass;
 
-class Query{
+use pocketmine\scheduler\AsyncTask;
+use pocketmine\Server;
 
-    public function __construct($host = '', $port = 19132){
-        $this->server = $this->UT3Query($host, $port);
-        if ($this->server === null) {
-            return false;
+class QueryTask extends AsyncTask{
+
+    private $queryServer;
+    private $host;
+    private $port;
+
+    public function __construct(string $host, int $port) {
+        $this->host = $host;
+        $this->port = $port;
+    }
+
+    public function onRun(){
+        $this->queryServer = $this->sendQuery($this->host, $this->port);
+        $status = $this->queryServer === null ? 'offline' : 'online';
+        if($status == "online"){
+            $this->setResult(["online",$this->queryServer[15],$this->queryServer[17]]);
         }
-        $this->fetchedData =
-            [
-                'server' => $this->server[1],
-                'server_gm' => $this->server[3],
-                'server_gn' => $this->server[5],
-                'version' => $this->server[7],
-                'server_engine' => $this->server[9],
-                'plugins' => $this->server[11],
-                'server_lobby' => $this->server[13],
-                'server_on' => $this->server[15],
-                'server_max' => $this->server[17],
-                'server_wl' => $this->server[19],
-                'server_ip' => $this->server[21],
-                'server_port' => $this->server[23],
-                'server_online' => implode('<br>', array_slice($this->server, 27))
-            ];
-
-        return true;
+        else{
+            $this->setResult(["offline",0,0]);
+        }
     }
 
-    public function status(){
-        return $this->server === null ? 'offline' : 'online';
+    public function onCompletion(Server $server){
+        $naviCompass = $server->getPluginManager()->getPlugin("NaviCompass");
+        $naviCompass->queryTaskCallback($this->getResult(), $this->host, $this->port);
     }
 
-    public function getPlayersCount(){
-        return $this->fetchedData['server_on'];
-    }
+    // This is an edited GitHub Gist by xBeastMode → https://gist.github.com/xBeastMode/89a9d85c21ec5f42f14db49550ea8e5c
 
-    public function getServerMaxPlayers(){
-        return $this->fetchedData['server_max'];
-    }
-
-    private function UT3Query($host, $port){
+    private function sendQuery(string $host, int $port){
         $socket = @fsockopen("udp://" . $host, $port, $timeout=1);
         stream_set_timeout($socket, 1);
         if (!$socket)
