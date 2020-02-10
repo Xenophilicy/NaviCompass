@@ -11,7 +11,7 @@
 #                                         $$ |                                      /  \__$$ |
 #                                         $$ |                                      $$    $$/ 
 #                                         $$/                                        $$$$$$/       
-VERSION: "2.0.0" # Internal use only
+VERSION: "2.0.1" # Internal use only
 
 # Choose your transfer type:
 # "external" will use an IP address and port to move players between SERVERS

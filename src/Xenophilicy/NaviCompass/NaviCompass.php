@@ -29,17 +29,13 @@ use Xenophilicy\NaviCompass\QueryTask;
 
 class NaviCompass extends PluginBase implements Listener{
 
-    private $config;
-    private $queryResult;
-    private $cmdMode;
-
     public function onEnable(){
         $this->getServer()->getPluginManager()->registerEvents($this, $this);
         $this->saveDefaultConfig();
         $this->config = new Config($this->getDataFolder()."config.yml", Config::YAML);
         $this->config->getAll();
         $version = $this->config->get("VERSION");
-        if($version != "2.0.0"){
+        if($version != "2.0.1"){
             $this->getLogger()->warning("You have updated NaviCompass but have an old config! Please delete your old config for new features to be enabled!");
         }
         $selectorEnable = $this->config->getNested("Selector.Enabled");
@@ -221,7 +217,7 @@ class NaviCompass extends PluginBase implements Listener{
             else{
                 $subtext = $this->config->getNested("UI.World-Button-Subtext");
                 $worldPlayerCount = 0;
-                foreach($this->getServer()->getLevelByName($value[2])->getPlayers() as $player){
+                foreach($this->getServer()->getLevelByName($value[2])->getPlayers() as $p){
                     $worldPlayerCount += 1;
                 }
                 $subtext = str_replace("{current-players}", $worldPlayerCount, $subtext);
