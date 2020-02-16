@@ -35,7 +35,7 @@ class NaviCompass extends PluginBase implements Listener{
         $this->config = new Config($this->getDataFolder()."config.yml", Config::YAML);
         $this->config->getAll();
         $version = $this->config->get("VERSION");
-        if($version != "2.0.1"){
+        if($version != "2.0.2"){
             $this->getLogger()->warning("You have updated NaviCompass but have an old config! Please delete your old config for new features to be enabled!");
         }
         $selectorEnable = $this->config->getNested("Selector.Enabled");
@@ -178,7 +178,7 @@ class NaviCompass extends PluginBase implements Listener{
                 }
                 else{
                     $cmdStr = $this->config->get("World-CMD");
-                    $cmdStr = str_replace("{player}", $player, $cmdStr);
+                    $cmdStr = str_replace("{player}", $player->getName(), $cmdStr);
                     $cmdStr = str_replace("{world}", $value[2], $cmdStr);
                     if ($this->cmdMode == 0){
                         $this->getServer()->getCommandMap()->dispatch($player, $cmdStr);
