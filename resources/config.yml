@@ -11,7 +11,7 @@
 #                                         $$ |                                      /  \__$$ |
 #                                         $$ |                                      $$    $$/ 
 #                                         $$/                                        $$$$$$/       
-VERSION: "2.0.2" # Internal use only
+VERSION: "2.1.0" # Internal use only
 
 # Choose your transfer type:
 # "external" will use an IP address and port to move players between SERVERS
@@ -30,6 +30,23 @@ World-CMD: "multiworld tp {world} {player}"
 # Options are: "console" and "player"
 World-CMD-Mode: "console"
 
+Command:
+  # Choose whether the command method should be enabled
+  Enabled: true
+
+  # This is name of the command that players will use to opent the UI
+  Name: "/servers"
+
+  # This is the command's description shown in the command window
+  Description: "Open the server list!"
+
+  Permission:
+    # Choose whether to require players to have permission to use the command
+    Enabled: false
+
+    # This is the command's usage permission
+    Node: "navicompass.use"
+
 Selector:
   # Choose whether the selector item should be enabled
   Enabled: true
@@ -42,8 +59,14 @@ Selector:
   # The range for this input is 0-35 (0-8 are the player's hotbar)
   Slot: 0
 
+  # Choose whether to prevent players from dropping or moving the selctor to different slots
+  Force-Slot: true
+
   # This is the text that will show on the selector in the player's inventory
   Name: "§l§aServer Selector"
+
+  # This is the selector item's description that is displayed under the name
+  Lore: "§bClick for Servers"
 
 UI:
   # This is the title of the transfer UI
@@ -68,7 +91,7 @@ UI:
 # You can use '§' and '&' on the labels to style your servers or worlds inside the UI
 # For images, use 'url' or 'path' to show an image in the menus (or leave blank to disable)
 # NOTE: If you are using a URL, do NOT include the 'https://' or 'http://' in the link!
-# If you don't want to use an image, simply don't add anything after ServerPort/WorldAlias in the listing
+# If you don't want to use an image, simply don't add anything after your server port/world alias in the listing
 # If you are using the INTERNAL transfer type, the world alias will be used in the transfer command
 # You must also be sure that the world alias is EXACTLY the same as the world's folder name
 

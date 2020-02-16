@@ -15,14 +15,16 @@
 
 namespace Xenophilicy\NaviCompass;
 
-use pocketmine\event\player\{PlayerJoinEvent,PlayerInteractEvent,PlayerQuitEvent,PlayerDropItemEvent};
-use pocketmine\command\{Command,CommandSender,ConsoleCommandSender};
-use pocketmine\item\enchantment\{Enchantment,EnchantmentInstance};
-use pocketmine\plugin\PluginBase;
+use pocketmine\event\player\{PlayerJoinEvent,PlayerInteractEvent,PlayerQuitEvent};
+use pocketmine\event\inventory\InventoryTransactionEvent;
 use pocketmine\event\Listener;
-use pocketmine\Player;
-use pocketmine\utils\{Config,TextFormat as TF};
+use pocketmine\command\{Command,PluginCommand,CommandSender,ConsoleCommandSender};
+use pocketmine\item\enchantment\{Enchantment,EnchantmentInstance};
 use pocketmine\item\Item;
+use pocketmine\inventory\transaction\action\{SlotChangeAction,DropItemAction};
+use pocketmine\plugin\PluginBase;
+use pocketmine\utils\{Config,TextFormat as TF};
+use pocketmine\Player;
 
 use Xenophilicy\NaviCompass\libs\jojoe77777\FormAPI\SimpleForm;
 use Xenophilicy\NaviCompass\QueryTask;
@@ -35,41 +37,61 @@ class NaviCompass extends PluginBase implements Listener{
         $this->config = new Config($this->getDataFolder()."config.yml", Config::YAML);
         $this->config->getAll();
         $version = $this->config->get("VERSION");
-        if($version != "2.0.2"){
-            $this->getLogger()->warning("You have updated NaviCompass but have an old config! Please delete your old config for new features to be enabled!");
+        $pluginVersion = $this->getDescription()->getVersion();
+        if($version < "2.1.0"){
+            $this->getLogger()->warning("You have updated NaviCompass to v$pluginVersion but have a config from v$version! Please delete your old config for new features to be enabled and to prevent unwanted errors! Plugin will");
         }
-        $selectorEnable = $this->config->getNested("Selector.Enabled");
-        if ($selectorEnable == true) {
+        if($this->config->getNested("Selector.Enabled") == true){
             $this->selectorSupport = true;
-        }
-        else{
+            $this->createEnchant();
+            $this->selectorName = TF::ITALIC.(str_replace("&", "§", $this->config->getNested("Selector.Name")));
+            $this->selectorLore = [str_replace("&", "§", $this->config->getNested("Selector.Lore"))];
+            $this->itemType = $this->config->getNested("Selector.Item");
+            $this->forceSlot = $this->config->getNested("Selector.Force-Slot");
+        } else{
             $this->selectorSupport = false;
             $this->getLogger()->info("Selector item disabled in config...");
+        }
+        if($this->config->getNested("Command.Enabled") == true){
+            $this->commandSupport = true;
+            $this->cmdName = str_replace("/","",$this->config->getNested("Command.Name"));
+            if($this->cmdName == null || $this->cmdName == ""){
+                $this->getLogger()->critical("Invalid UI command string found, disabling plugin...");
+                $this->getServer()->getPluginManager()->disablePlugin($this);
+                return;
+            } else{
+                $cmd = new PluginCommand($this->cmdName , $this);
+                $cmd->setDescription($this->config->getNested("Command.Description"));
+                if($this->config->getNested("Command.Permission.Enabled") == True){
+                    $cmd->setPermission($this->config->getNested("Command.Permission.Node"));
+                }
+                $this->getServer()->getCommandMap()->register($this->cmdName, $cmd);
+            }
+        } else{
+            $this->commandSupport = false;
+            $this->getLogger()->info("Command method disabled in config...");
         }
         $transferType = $this->config->get("Transfer-Type");
         switch(strtolower($transferType)){
             case "external":
-                $this->externalLimit = false;
+                $this->extLimit = false;
                 break;
             case "hybrid":
             case "internal":
                 if($this->config->get("World-CMD") == null || $this->config->get("World-CMD") == ""){
                     $this->getLogger()->critical("Null world command string found, limiting to external use!");
-                    $this->externalLimit = true;
-                }
-                else{
+                    $this->extLimit = true;
+                } else{
                     $mode = $this->config->get("World-CMD-Mode");
                     if(strtolower($mode) == "player"){
-                        $this->externalLimit = false;
+                        $this->extLimit = false;
                         $this->cmdMode = 0;
-                    }
-                    elseif(strtolower($mode) == "console"){
-                        $this->externalLimit = false;
+                    } elseif(strtolower($mode) == "console"){
+                        $this->extLimit = false;
                         $this->cmdMode = 1;
-                    }
-                    else{
+                    } else{
                         $this->getLogger()->critical("Null world command mode found, limiting to external use!");
-                        $this->externalLimit = true;
+                        $this->extLimit = true;
                     }
                 }
                 break;
@@ -88,10 +110,10 @@ class NaviCompass extends PluginBase implements Listener{
             if($level === "." || $level === ".."){
                 continue;
             }
-            $this->getServer()->loadLevel($level); 
+            $this->getServer()->loadLevel($level);
         }
-        $this->list = $this->config->get("List");
-        foreach ($this->list as $target) {
+        $this->list = [];
+        foreach($this->config->get("List") as $target){
             unset($search);
             $value = explode(":", $target);
             if(strtolower($value[0]) === "ext"){
@@ -100,16 +122,15 @@ class NaviCompass extends PluginBase implements Listener{
                 }
                 $this->queryResults[$value[2].":".$value[3]] = [];
                 $this->startQueryTask($value[2],$value[3]);
-            }
-            elseif(strtolower($value[0]) === "int"){
+                array_push($this->list, $target);
+            } elseif(strtolower($value[0]) === "int" && !$this->extLimit){
                 $level = $this->getServer()->getLevelByName($value[2]);
                 if($level === null){
                     if($value[2] == "xenoCreative"){
                         $this->getLogger()->critical("You are using a default server/world configuration! Please change this to YOUR servers/worlds for the plugin to function properly! Plugin will remain disabled until default config is changed...");
                         $this->getServer()->getPluginManager()->disablePlugin($this);
                         return;
-                    }
-                    else{
+                    } else{
                         $this->getLogger()->critical("Invalid world name! Name: ".$value[2]." was not found, disabling plugin! Be sure you use the name of the world folder for the 'WorldAlias' key in the config!");
                         $this->getServer()->getPluginManager()->disablePlugin($this);
                         return;
@@ -121,6 +142,7 @@ class NaviCompass extends PluginBase implements Listener{
                         $this->getLogger()->warning("Null path/URL! Input: ".$value[1]);
                     }
                 }
+                array_push($this->list, $target);
             }
             if(isset($search)){
                 switch(strtolower($search)){
@@ -135,6 +157,19 @@ class NaviCompass extends PluginBase implements Listener{
         }
     }
 
+    private function isSelectorItem(Item $item) : bool{
+        if($item->getCustomName() == $this->selectorName && $item->getId() == $this->itemType && $item->getLore() == $this->selectorLore){
+            return true;
+        }
+        return false;
+    }
+
+    private function createEnchant(){
+        Enchantment::registerEnchantment(new Enchantment(100, "", 0, 0, 0, 1));
+        $enchantment = Enchantment::getEnchantment(100);
+        $this->enchInst = new EnchantmentInstance($enchantment, 1);
+    }
+
     private function startQueryTask(string $host, int $port){
         $this->getScheduler()->scheduleRepeatingTask(new QueryTaskCaller($this, $host, $port), 100);
     }
@@ -144,19 +179,17 @@ class NaviCompass extends PluginBase implements Listener{
 	}
 
     public function onCommand(CommandSender $sender, Command $command, string $label, array $args) : bool{
-        if ($command->getName() == "servers"){
-            if ($sender instanceof Player) {
+        if($this->commandSupport == true && $command->getName() == $this->cmdName){
+            if($sender instanceof Player){
                 $this->serverList($sender);
-            }
-            else{
+            } else{
                 $sender->sendMessage(" ".$this->config->getNested("UI.Title"));
-                foreach ($this->list as $target){
+                foreach($this->list as $target){
                     $value = explode(":", $target);
                     $value = str_replace("&", "§", $value);
                     if(strtolower($value[0]) == "ext"){
                         $sender->sendMessage(TF::YELLOW."Name: ".$value[1].TF::RESET.TF::YELLOW." | IP: ".$value[2]." | Port: ".$value[3]);
-                    }
-                    else{
+                    } else{
                         $sender->sendMessage(TF::YELLOW."Name: ".$value[1].TF::RESET.TF::YELLOW." | Alias: ".$value[2]);
                     }
                 }
@@ -167,32 +200,29 @@ class NaviCompass extends PluginBase implements Listener{
 
     public function serverList($player){
         $form = new SimpleForm(function (Player $player, $data){
-            if ($data === null){
+            if($data === null){
                 return;
-            }
-            else{
+            } else{
                 $value = explode(":", $this->list[$data]);
                 $value = str_replace("&", "§", $value);
                 if(strtolower($value[0]) == "ext"){
                     $player->transfer($value[2],$value[3]);
-                }
-                else{
+                } else{
                     $cmdStr = $this->config->get("World-CMD");
                     $cmdStr = str_replace("{player}", $player->getName(), $cmdStr);
                     $cmdStr = str_replace("{world}", $value[2], $cmdStr);
-                    if ($this->cmdMode == 0){
+                    if($this->cmdMode == 0){
                         $this->getServer()->getCommandMap()->dispatch($player, $cmdStr);
-                    }
-                    else{
+                    } else{
                         $this->getServer()->getCommandMap()->dispatch(new ConsoleCommandSender(), $cmdStr);
                     }
                 }
             }
             return true;
         });
-        $form->setTitle($this->config->get("UI.Title"));
-        $form->setContent($this->config->get("UI.Message"));
-        foreach ($this->list as $target) {
+        $form->setTitle($this->config->getNested("UI.Title"));
+        $form->setContent($this->config->getNested("UI.Message"));
+        foreach($this->list as $target){
             $value = explode(":", $target);
             $value = str_replace("&", "§", $value);
             unset($search);
@@ -203,8 +233,7 @@ class NaviCompass extends PluginBase implements Listener{
                     $subtext = str_replace("{status}", TF::GREEN."Online".TF::RESET, $subtext);
                     $subtext = str_replace("{current-players}", $queryResult[1], $subtext);
                     $subtext = str_replace("{max-players}", $queryResult[2], $subtext);
-                }
-                else{
+                } else{
                     $subtext = str_replace("{status}", TF::RED."Offline".TF::RESET, $subtext);
                     $subtext = str_replace("{current-players}", "-", $subtext);
                     $subtext = str_replace("{max-players}", "-", $subtext);
@@ -213,8 +242,7 @@ class NaviCompass extends PluginBase implements Listener{
                     $search = $value[4];
                     $file = $value[5];
                 }
-            }
-            else{
+            } else{
                 $subtext = $this->config->getNested("UI.World-Button-Subtext");
                 $worldPlayerCount = 0;
                 foreach($this->getServer()->getLevelByName($value[2])->getPlayers() as $p){
@@ -233,8 +261,7 @@ class NaviCompass extends PluginBase implements Listener{
                 if($search == "path"){
                     $form->addButton($value[1]."\n".$subtext, 0, $file);
                 }
-            }
-            else{
+            } else{
                 $form->addButton($value[1]."\n".$subtext);
             }
         }
@@ -242,17 +269,13 @@ class NaviCompass extends PluginBase implements Listener{
     }
 
     public function onJoin(PlayerJoinEvent $event){
-        if ($this->selectorSupport == true) {
+        if($this->selectorSupport == true){
             $player = $event->getPlayer();
-            $selectorText = $this->config->getNested("Selector.Name");
-            $selectorText = str_replace("&", "§", $selectorText);
-            $enchantment = Enchantment::getEnchantment(0);
-            $enchInstance = new EnchantmentInstance($enchantment, 1);
-            $itemType = $this->config->getNested("Selector.Item");
-            $item = Item::get($itemType);
-            $item->setCustomName(TF::ITALIC."$selectorText");
-            $item->addEnchantment($enchInstance);
-            $slot = $itemType = $this->config->getNested("Selector.Slot");
+            $item = Item::get($this->itemType);
+            $item->setCustomName($this->selectorName);
+            $item->setLore($this->selectorLore);
+            $item->addEnchantment($this->enchInst);
+            $slot = $this->config->getNested("Selector.Slot");
             $player->getInventory()->setItem($slot,$item,true);
         }
     }
@@ -260,37 +283,34 @@ class NaviCompass extends PluginBase implements Listener{
     public function onQuit(PlayerQuitEvent $event){
         $player = $event->getPlayer();
         $items = $player->getInventory()->getContents();
-        $selectorText = $this->config->getNested("Selector.Name");
-        $selectorText = str_replace("&", "§", $selectorText);
-        foreach ($items as $target) {
-            if ($target->getCustomName() == TF::ITALIC."$selectorText") {
+        foreach($items as $target){
+            if($this->isSelectorItem($target)){
                 $player->getInventory()->remove($target);
             }
         }
     }
 
     public function onInteract(PlayerInteractEvent $event){
-        if ($this->selectorSupport == true) {
+        if($this->selectorSupport == true){
             $player = $event->getPlayer();
-            $selectorText = $this->config->getNested("Selector.Name");
-            $selectorText = str_replace("&", "§", $selectorText);
-            $itemType = $this->config->getNested("Selector.Item");
             $item = $player->getInventory()->getItemInHand();
-            if ($item->getCustomName() == TF::ITALIC."$selectorText" && $item->getId() == $itemType){
+            if($this->isSelectorItem($item)){
                 $this->serverList($player);
             }
         }
     }
 
-    public function onDrop(PlayerDropItemEvent $event){
-        if ($this->selectorSupport == true) {
-            $player = $event->getPlayer();
-            $selectorText = $this->config->getNested("Selector.Name");
-            $selectorText = str_replace("&", "§", $selectorText);
-            $itemType = $this->config->getNested("Selector.Item");
-            $item = $player->getInventory()->getItemInHand();
-            if ($item->getCustomName() == TF::ITALIC."$selectorText" && $item->getId() == $itemType){
-                $event->setCancelled();
+    public function onInventoryTransaction(InventoryTransactionEvent $event){
+        if($this->selectorSupport == true && $this->forceSlot == true){
+            $transaction = $event->getTransaction();
+            foreach($transaction->getActions() as $action){
+                $item = $action->getSourceItem();
+                $source = $transaction->getSource();
+                if($source instanceof Player && $this->isSelectorItem($item)){
+                    if($action instanceof SlotChangeAction || $action instanceof DropItemAction){
+                        $event->setCancelled();
+                    }
+                }
             }
         }
     }
