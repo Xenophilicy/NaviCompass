@@ -37,9 +37,9 @@ class NaviCompass extends PluginBase implements Listener{
         $this->config = new Config($this->getDataFolder()."config.yml", Config::YAML);
         $this->config->getAll();
         $version = $this->config->get("VERSION");
-        $pluginVersion = $this->getDescription()->getVersion();
+        $this->pluginVersion = $this->getDescription()->getVersion();
         if($version < "2.1.0"){
-            $this->getLogger()->warning("You have updated NaviCompass to v$pluginVersion but have a config from v$version! Please delete your old config for new features to be enabled and to prevent unwanted errors! Plugin will");
+            $this->getLogger()->warning("You have updated NaviCompass to v".$this->pluginVersion." but have a config from v$version! Please delete your old config for new features to be enabled and to prevent unwanted errors! Plugin will");
         }
         if($this->config->getNested("Selector.Enabled") == true){
             $this->selectorSupport = true;
@@ -179,6 +179,23 @@ class NaviCompass extends PluginBase implements Listener{
 	}
 
     public function onCommand(CommandSender $sender, Command $command, string $label, array $args) : bool{
+        if ($command->getName() == "navicompass"){
+            $sender->sendMessage(TF::GRAY."---".TF::GOLD." NaviCompass ".TF::GRAY."---");
+            $sender->sendMessage(TF::YELLOW."Version: ".TF::AQUA.$this->pluginVersion);
+            $sender->sendMessage(TF::YELLOW."Description: ".TF::AQUA."View servers or worlds");
+            if($this->selectorSupport){
+                $sender->sendMessage(TF::YELLOW."Selector: ".TF::GREEN."Enabled");
+            } else{
+                $sender->sendMessage(TF::YELLOW."Selector: ".TF::RED."Disabled");
+            }
+            if($this->commandSupport){
+                $sender->sendMessage(TF::YELLOW."Command: ".TF::GREEN."Enabled");
+                $sender->sendMessage(TF::LIGHT_PURPLE ." - ".TF::BLUE."/".$this->cmdName);
+            } else{
+                $sender->sendMessage(TF::YELLOW."Command: ".TF::RED."Disabled");
+            }
+            $sender->sendMessage(TF::GRAY."-------------------");
+        }
         if($this->commandSupport == true && $command->getName() == $this->cmdName){
             if($sender instanceof Player){
                 $this->serverList($sender);
