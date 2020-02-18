@@ -65,7 +65,7 @@ class NaviCompass extends PluginBase implements Listener{
                 if($this->config->getNested("Command.Permission.Enabled") == True){
                     $cmd->setPermission($this->config->getNested("Command.Permission.Node"));
                 }
-                $this->getServer()->getCommandMap()->register($this->cmdName, $cmd);
+                $this->getServer()->getCommandMap()->register("NaviCompass", $cmd, $this->cmdName);
             }
         } else{
             $this->commandSupport = false;
