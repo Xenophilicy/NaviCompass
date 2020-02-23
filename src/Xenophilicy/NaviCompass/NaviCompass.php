@@ -33,15 +33,25 @@ class NaviCompass extends PluginBase implements Listener{
 
     public function onEnable(){
         $this->getServer()->getPluginManager()->registerEvents($this, $this);
+        $configPath = $this->getDataFolder()."config.yml";
+        if(!file_exists($configPath)){
+            $this->getLogger()->critical("It appears that this is the first time you are using NaviCompass! This plugin does not function with the default config.yml, so please edit it to your preferred settings before attempting to use it.");
+            $this->saveDefaultConfig();
+            $config = new Config($configPath, Config::YAML);
+            $config->getAll();
+            $this->getServer()->getPluginManager()->disablePlugin($this);
+            return;
+        }
         $this->saveDefaultConfig();
-        $this->config = new Config($this->getDataFolder()."config.yml", Config::YAML);
+        $this->config = new Config($configPath, Config::YAML);
         $this->config->getAll();
         $version = $this->config->get("VERSION");
         $this->pluginVersion = $this->getDescription()->getVersion();
         if($version < "2.1.0"){
-            $this->getLogger()->warning("You have updated NaviCompass to v".$this->pluginVersion." but have a config from v$version! Please delete your old config for new features to be enabled and to prevent unwanted errors! Plugin will");
+            $this->getLogger()->warning("You have updated NaviCompass to v".$this->pluginVersion." but have a config from v$version! Please delete your old config for new features to be enabled and to prevent unwanted errors! Plugin will remain disabled...");
+            $this->getServer()->getPluginManager()->disablePlugin($this);
         }
-        if($this->config->getNested("Selector.Enabled") == true){
+        if($this->config->getNested("Selector.Enabled")){
             $this->selectorSupport = true;
             $this->createEnchant();
             $this->selectorName = TF::ITALIC.(str_replace("&", "§", $this->config->getNested("Selector.Name")));
@@ -52,7 +62,7 @@ class NaviCompass extends PluginBase implements Listener{
             $this->selectorSupport = false;
             $this->getLogger()->info("Selector item disabled in config...");
         }
-        if($this->config->getNested("Command.Enabled") == true){
+        if($this->config->getNested("Command.Enabled")){
             $this->commandSupport = true;
             $this->cmdName = str_replace("/","",$this->config->getNested("Command.Name"));
             if($this->cmdName == null || $this->cmdName == ""){
@@ -62,7 +72,7 @@ class NaviCompass extends PluginBase implements Listener{
             } else{
                 $cmd = new PluginCommand($this->cmdName , $this);
                 $cmd->setDescription($this->config->getNested("Command.Description"));
-                if($this->config->getNested("Command.Permission.Enabled") == True){
+                if($this->config->getNested("Command.Permission.Enabled")){
                     $cmd->setPermission($this->config->getNested("Command.Permission.Node"));
                 }
                 $this->getServer()->getCommandMap()->register("NaviCompass", $cmd, $this->cmdName);
@@ -158,8 +168,10 @@ class NaviCompass extends PluginBase implements Listener{
     }
 
     private function isSelectorItem(Item $item) : bool{
-        if($item->getCustomName() == $this->selectorName && $item->getId() == $this->itemType && $item->getLore() == $this->selectorLore){
-            return true;
+        if($this->selectorSupport){
+            if($item->getCustomName() == $this->selectorName && $item->getId() == $this->itemType && $item->getLore() == $this->selectorLore){
+                return true;
+            }
         }
         return false;
     }
@@ -196,7 +208,7 @@ class NaviCompass extends PluginBase implements Listener{
             }
             $sender->sendMessage(TF::GRAY."-------------------");
         }
-        if($this->commandSupport == true && $command->getName() == $this->cmdName){
+        if($this->commandSupport && $command->getName() == $this->cmdName){
             if($sender instanceof Player){
                 $this->serverList($sender);
             } else{
@@ -286,7 +298,7 @@ class NaviCompass extends PluginBase implements Listener{
     }
 
     public function onJoin(PlayerJoinEvent $event){
-        if($this->selectorSupport == true){
+        if($this->selectorSupport){
             $player = $event->getPlayer();
             $item = Item::get($this->itemType);
             $item->setCustomName($this->selectorName);
@@ -308,7 +320,7 @@ class NaviCompass extends PluginBase implements Listener{
     }
 
     public function onInteract(PlayerInteractEvent $event){
-        if($this->selectorSupport == true){
+        if($this->selectorSupport){
             $player = $event->getPlayer();
             $item = $player->getInventory()->getItemInHand();
             if($this->isSelectorItem($item)){
@@ -318,7 +330,7 @@ class NaviCompass extends PluginBase implements Listener{
     }
 
     public function onInventoryTransaction(InventoryTransactionEvent $event){
-        if($this->selectorSupport == true && $this->forceSlot == true){
+        if($this->selectorSupport && $this->forceSlot){
             $transaction = $event->getTransaction();
             foreach($transaction->getActions() as $action){
                 $item = $action->getSourceItem();
