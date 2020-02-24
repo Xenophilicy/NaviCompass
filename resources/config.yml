@@ -101,3 +101,6 @@ UI:
 List:
   - "ext:§l§2Prison §eServer:play.xenoservers.net:19133:url:file.xenoservers.net/Resources/GitHub-Resources/navicompass/prison.png" # ← EXTERNAL server example
   - "int:§l§5Creative:xenoCreative:url:file.xenoservers.net/Resources/GitHub-Resources/navicompass/creative.png" # ← INTERNAL world example
+  - "ext:§l§3Faction§bSkyBlock:galaxype.nbb.one:22091"
+  - "ext:§l§6Kit§ePvP:78.46.88.144:19194"
+  - "ext:§l§cSky§4Wars:136.243.1.91:22027"
