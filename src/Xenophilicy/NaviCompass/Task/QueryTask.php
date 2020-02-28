@@ -13,10 +13,12 @@
 #                                         $$ |                                      $$    $$/ 
 #                                         $$/                                        $$$$$$/
 
-namespace Xenophilicy\NaviCompass;
+namespace Xenophilicy\NaviCompass\Task;
 
 use pocketmine\scheduler\AsyncTask;
 use pocketmine\Server;
+
+use Xenophilicy\NaviCompass\NaviCompass;
 
 class QueryTask extends AsyncTask{
 
@@ -41,8 +43,7 @@ class QueryTask extends AsyncTask{
     }
 
     public function onCompletion(Server $server){
-        $naviCompass = $server->getPluginManager()->getPlugin("NaviCompass");
-        $naviCompass->queryTaskCallback($this->getResult(), $this->host, $this->port);
+        NaviCompass::getPlugin()->queryTaskCallback($this->getResult(), $this->host, $this->port);
     }
 
     // This is an edited GitHub Gist by xBeastMode → https://gist.github.com/xBeastMode/89a9d85c21ec5f42f14db49550ea8e5c

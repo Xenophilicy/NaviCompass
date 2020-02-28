@@ -27,18 +27,19 @@ use pocketmine\utils\{Config,TextFormat as TF};
 use pocketmine\Player;
 
 use Xenophilicy\NaviCompass\libs\jojoe77777\FormAPI\SimpleForm;
-use Xenophilicy\NaviCompass\QueryTask;
+use Xenophilicy\NaviCompass\Task\QueryTaskCaller;
 
 class NaviCompass extends PluginBase implements Listener{
 
+    private static $plugin;
+
     public function onEnable(){
+        self::$plugin = $this;
         $this->getServer()->getPluginManager()->registerEvents($this, $this);
         $configPath = $this->getDataFolder()."config.yml";
         if(!file_exists($configPath)){
             $this->getLogger()->critical("It appears that this is the first time you are using NaviCompass! This plugin does not function with the default config.yml, so please edit it to your preferred settings before attempting to use it.");
             $this->saveDefaultConfig();
-            $config = new Config($configPath, Config::YAML);
-            $config->getAll();
             $this->getServer()->getPluginManager()->disablePlugin($this);
             return;
         }
@@ -188,7 +189,11 @@ class NaviCompass extends PluginBase implements Listener{
 
     public function queryTaskCallback($result, string $host, int $port){
 		$this->queryResults[$host.":".$port] = $result;
-	}
+    }
+    
+    public static function getPLugin(){
+        return self::$plugin;
+    }
 
     public function onCommand(CommandSender $sender, Command $command, string $label, array $args) : bool{
         if ($command->getName() == "navicompass"){
@@ -273,10 +278,7 @@ class NaviCompass extends PluginBase implements Listener{
                 }
             } else{
                 $subtext = $this->config->getNested("UI.World-Button-Subtext");
-                $worldPlayerCount = 0;
-                foreach($this->getServer()->getLevelByName($value[2])->getPlayers() as $p){
-                    $worldPlayerCount += 1;
-                }
+                $worldPlayerCount = sizeof($this->getServer()->getLevelByName($value[2])->getPlayers());
                 $subtext = str_replace("{current-players}", $worldPlayerCount, $subtext);
                 if(isset($value[3])){
                     $search = $value[3];

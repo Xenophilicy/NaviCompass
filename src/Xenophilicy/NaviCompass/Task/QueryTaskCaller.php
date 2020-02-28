@@ -13,9 +13,11 @@
 #                                         $$ |                                      $$    $$/ 
 #                                         $$/                                        $$$$$$/
 
-namespace Xenophilicy\NaviCompass;
+namespace Xenophilicy\NaviCompass\Task;
 
 use pocketmine\scheduler\Task;
+
+use Xenophilicy\NaviCompass\NaviCompass;
 
 class QueryTaskCaller extends Task{
 
