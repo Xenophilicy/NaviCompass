@@ -36,8 +36,7 @@ class QueryTask extends AsyncTask{
         $status = $this->queryServer === null ? 'offline' : 'online';
         if($status == "online"){
             $this->setResult(["online",$this->queryServer[15],$this->queryServer[17]]);
-        }
-        else{
+        } else{
             $this->setResult(["offline",0,0]);
         }
     }
@@ -50,22 +49,22 @@ class QueryTask extends AsyncTask{
 
     private function sendQuery(string $host, int $port){
         $socket = @fsockopen("udp://" . $host, $port, $timeout=1);
-        stream_set_timeout($socket, 1);
-        if (!$socket)
+        if(!$socket)
             return null;
+        stream_set_timeout($socket, 1);
         $online = @fwrite($socket, "\xFE\xFD\x09\x10\x20\x30\x40\xFF\xFF\xFF\x01");
-        if (!$online)
+        if(!$online)
             return null;
         $challenge = @fread($socket, 1400);
         $res = stream_get_meta_data($socket);
-        if ($res['timed_out'])
+        if($res['timed_out'])
             return null;
-        if (!$challenge)
+        if(!$challenge)
             return null;
         $challenge = substr(preg_replace("/[^0-9-]/si", "", $challenge), 1);
         $query = sprintf("\xFE\xFD\x00\x10\x20\x30\x40%c%c%c%c\xFF\xFF\xFF\x01",
             $challenge >> 24, $challenge >> 16, $challenge >> 8, $challenge >> 0);
-        if (!@fwrite($socket, $query))
+        if(!@fwrite($socket, $query))
             return null;
         $response = array();
         $response[] = @fread($socket, 2048);

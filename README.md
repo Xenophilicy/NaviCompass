@@ -1,7 +1,7 @@
 # NaviCompass
 [![](https://poggit.pmmp.io/shield.state/NaviCompass)](https://poggit.pmmp.io/p/NaviCompass)
 [![HitCount](http://hits.dwyl.io/Xenophilicy/NaviCompass.svg)](http://hits.dwyl.io/Xenophilicy/NaviCompass)
-![](https://img.shields.io/discord/490677165289897995.svg?style=flat-square)
+[![Discord Chat](https://img.shields.io/discord/490677165289897995.svg)](https://discord.gg/hNVehXe)
 
 # [![Xenophilicy](https://file.xenoservers.net/Resources/GitHub-Resources/navicompass/screenshot.png)]()
 
@@ -12,7 +12,7 @@ With this plugin you can allow your players to transfer between your server netw
 
 ## NaviCompass Details
 * **API:** 3.0.0+
-* **Version:** 2.1.3
+* **Version:** 2.1.4
 * **Basic Description:** Lets you transfer between your server network and worlds with a UI!
 * *Easy to edit config.yml file*
 * *Simple code for editing and debugging*
