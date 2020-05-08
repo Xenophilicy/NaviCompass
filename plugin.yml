@@ -1,6 +1,6 @@
 name: NaviCompass
 author: Xenophilicy
-version: 2.1.4
+version: 2.1.5
 main: Xenophilicy\NaviCompass\NaviCompass
 api: 3.0.0
 description: View all your servers or worlds in a list using FormAPI!

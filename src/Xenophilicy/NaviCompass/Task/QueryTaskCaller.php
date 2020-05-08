@@ -16,22 +16,21 @@
 namespace Xenophilicy\NaviCompass\Task;
 
 use pocketmine\scheduler\Task;
-
 use Xenophilicy\NaviCompass\NaviCompass;
 
-class QueryTaskCaller extends Task{
-
+class QueryTaskCaller extends Task {
+    
     private $plugin;
     private $host;
     private $port;
-	
-	public function __construct(NaviCompass $plugin, string $host, int $port){
+    
+    public function __construct(NaviCompass $plugin, string $host, int $port){
         $this->plugin = $plugin;
         $this->host = $host;
         $this->port = $port;
-	}
-	
-	public function onRun(int $currentTick){
-		$this->plugin->getServer()->getAsyncPool()->submitTask(new QueryTask($this->host, $this->port));
-	}
+    }
+    
+    public function onRun(int $currentTick){
+        $this->plugin->getServer()->getAsyncPool()->submitTask(new QueryTask($this->host, $this->port));
+    }
 }
