@@ -161,13 +161,6 @@ class NaviCompass extends PluginBase implements Listener {
                 $this->getServer()->getPluginManager()->disablePlugin($this);
                 return;
         }
-        $levels = scandir($this->getServer()->getDataPath() . "worlds/");
-        foreach($levels as $level){
-            if($level === "." || $level === ".."){
-                continue;
-            }
-            $this->getServer()->loadLevel($level);
-        }
         $this->list = [];
         foreach($this->config->get("List") as $target){
             unset($search);
@@ -178,37 +171,36 @@ class NaviCompass extends PluginBase implements Listener {
                 }
                 $this->queryResults[$value[2] . ":" . $value[3]] = [];
                 $this->startQueryTask($value[2], $value[3]);
-                array_push($this->list, $target);
             }elseif(strtolower($value[0]) === "int" && !$extLimit){
-                $level = $this->getServer()->getLevelByName($value[2]);
-                if($level === null){
+                if(!$this->getServer()->isLevelGenerated($value[2])){
                     if($value[2] == "xenoCreative"){
                         $this->getLogger()->critical("You are using a default server/world configuration! Please change this to YOUR servers/worlds for the plugin to function properly! Plugin will remain disabled until default config is changed...");
                         $this->getServer()->getPluginManager()->disablePlugin($this);
                         return;
                     }else{
-                        $this->getLogger()->critical("Invalid world name! Name: " . $value[2] . " was not found, disabling plugin! Be sure you use the name of the world folder for the 'WorldAlias' key in the config!");
-                        $this->getServer()->getPluginManager()->disablePlugin($this);
-                        return;
+                        $this->getLogger()->critical("Invalid world name! Name: " . $value[2] . " was not found, be sure to use the name of the world folder for the 'WorldAlias' key in the config!");
+                        continue;
                     }
                 }
                 if(isset($value[3])){
                     $search = $value[3];
-                    if(!isset($value[4])){
+                    if(!isset($value[4]) || $value[4] === ""){
                         $this->getLogger()->warning("Null path/URL! Input: " . $value[1]);
+                        continue;
                     }
                 }
-                array_push($this->list, $target);
-            }
-            if(isset($search)){
-                switch(strtolower($search)){
-                    case'url':
-                    case'path':
-                        break;
-                    default:
-                        $this->getLogger()->warning("Invalid image type! Input: " . $value[1] . TF::RESET . TF::YELLOW . " Image type: " . $search . TF::RESET . TF::YELLOW . " not supported. ");
+                if(isset($search)){
+                    switch(strtolower($search)){
+                        case'url':
+                        case'path':
+                            break;
+                        default:
+                            $this->getLogger()->warning("Invalid image type! Input: " . $value[1] . TF::RESET . TF::YELLOW . " Image type: " . $search . TF::RESET . TF::YELLOW . " not supported. ");
+                            continue 2;
+                    }
                 }
             }
+            array_push($this->list, $target);
         }
     }
     
@@ -322,7 +314,7 @@ class NaviCompass extends PluginBase implements Listener {
                     $form->addButton($value[1] . "\n" . $subtext, 1, "http://" . $file);
                 }
                 if($search == "path"){
-                    $form->addButton($value[1] . "\n" . $subtext, 0, $file);
+                    $form->addButton($value[1] . "\n" . $subtext, 0, str_replace("++", ":", $file));
                 }
             }else{
                 $form->addButton($value[1] . "\n" . $subtext);
