@@ -46,8 +46,8 @@ class QueryTask extends AsyncTask {
     // This is an edited GitHub Gist by xBeastMode → https://gist.github.com/xBeastMode/89a9d85c21ec5f42f14db49550ea8e5c
     
     private function sendQuery(string $host, int $port){
-        $timeout = 1;
-        $socket = @fsockopen("udp://" . $host, $port, $timeout);
+        $timeout = 5;
+        $socket = @fsockopen("udp://" . $host, $port);
         if(!$socket) return null;
         stream_set_timeout($socket, $timeout);
         $online = @fwrite($socket, "\xFE\xFD\x09\x10\x20\x30\x40\xFF\xFF\xFF\x01");
