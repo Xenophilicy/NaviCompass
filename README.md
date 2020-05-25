@@ -14,7 +14,7 @@ With this plugin you can allow your players to transfer between your server netw
 
 ## NaviCompass Details
 * **API:** 3.0.0+
-* **Version:** 2.1.7
+* **Version:** 2.2.0
 * **Basic Description:** Lets you transfer between your server network and worlds with a UI!
 * *Easy to edit config.yml file*
 * *Simple code for editing and debugging*

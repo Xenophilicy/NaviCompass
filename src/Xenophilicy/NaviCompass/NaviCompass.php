@@ -15,18 +15,34 @@
 
 namespace Xenophilicy\NaviCompass;
 
-use pocketmine\command\{Command, CommandSender, ConsoleCommandSender, PluginCommand};
+use pocketmine\command\{Command, CommandSender, PluginCommand};
 use pocketmine\event\inventory\InventoryTransactionEvent;
 use pocketmine\event\Listener;
 use pocketmine\event\player\{PlayerInteractEvent, PlayerJoinEvent, PlayerQuitEvent};
 use pocketmine\inventory\transaction\action\{DropItemAction, SlotChangeAction};
 use pocketmine\item\enchantment\{Enchantment, EnchantmentInstance};
 use pocketmine\item\Item;
+use pocketmine\level\sound\AnvilBreakSound;
+use pocketmine\level\sound\AnvilFallSound;
+use pocketmine\level\sound\AnvilUseSound;
+use pocketmine\level\sound\BlazeShootSound;
+use pocketmine\level\sound\ClickSound;
+use pocketmine\level\sound\DoorBumpSound;
+use pocketmine\level\sound\DoorCrashSound;
+use pocketmine\level\sound\EndermanTeleportSound;
+use pocketmine\level\sound\FizzSound;
+use pocketmine\level\sound\GhastShootSound;
+use pocketmine\level\sound\GhastSound;
+use pocketmine\level\sound\LaunchSound;
+use pocketmine\level\sound\PopSound;
+use pocketmine\level\sound\Sound;
 use pocketmine\Player;
 use pocketmine\plugin\PluginBase;
 use pocketmine\utils\{Config, TextFormat as TF};
 use Xenophilicy\NaviCompass\libs\jojoe77777\FormAPI\SimpleForm;
 use Xenophilicy\NaviCompass\Task\QueryTaskCaller;
+use Xenophilicy\NaviCompass\Task\TeleportTask;
+use Xenophilicy\NaviCompass\Task\TransferTask;
 
 class NaviCompass extends PluginBase implements Listener {
     
@@ -71,8 +87,29 @@ class NaviCompass extends PluginBase implements Listener {
     /**
      * @var int
      */
-    private $cmdMode;
+    public $cmdMode;
     private $queryResults;
+    public $transferSound;
+    /**
+     * @var mixed|null
+     */
+    private $openSound;
+    /**
+     * @var mixed|null
+     */
+    public $teleportTitle;
+    /**
+     * @var mixed|null
+     */
+    public $delay;
+    /**
+     * @var mixed|null
+     */
+    public $transferTitle;
+    /**
+     * @var mixed|null
+     */
+    public $teleportSound;
     
     public static function getPLugin(){
         return self::$plugin;
@@ -91,11 +128,12 @@ class NaviCompass extends PluginBase implements Listener {
         $this->saveDefaultConfig();
         $this->config = new Config($configPath, Config::YAML);
         $this->config->getAll();
-        $version = $this->config->get("VERSION");
+        $configVersion = $this->config->get("VERSION");
         $this->pluginVersion = $this->getDescription()->getVersion();
-        if($version < "2.1.0"){
-            $this->getLogger()->warning("You have updated NaviCompass to v" . $this->pluginVersion . " but have a config from v$version! Please delete your old config for new features to be enabled and to prevent unwanted errors! Plugin will remain disabled...");
+        if($configVersion < $this->pluginVersion){
+            $this->getLogger()->warning("You have updated NaviCompass to v" . $this->pluginVersion . " but have a config from v$configVersion! Please delete your old config for new features to be enabled and to prevent unwanted errors!");
             $this->getServer()->getPluginManager()->disablePlugin($this);
+            return;
         }
         if($this->config->getNested("Selector.Enabled")){
             $this->selectorSupport = true;
@@ -174,7 +212,7 @@ class NaviCompass extends PluginBase implements Listener {
             }elseif(strtolower($value[0]) === "int" && !$extLimit){
                 if(!$this->getServer()->isLevelGenerated($value[2])){
                     if($value[2] == "xenoCreative"){
-                        $this->getLogger()->critical("You are using a default server/world configuration! Please change this to YOUR servers/worlds for the plugin to function properly! Plugin will remain disabled until default config is changed...");
+                        $this->getLogger()->critical("This plugin does not function with the default config.yml, so please edit it to your preferred settings before attempting to use it. Plugin will remain disabled until default config is changed.");
                         $this->getServer()->getPluginManager()->disablePlugin($this);
                         return;
                     }else{
@@ -200,6 +238,11 @@ class NaviCompass extends PluginBase implements Listener {
                     }
                 }
             }
+            $this->teleportSound = $this->config->getNested("Sounds.Teleport");
+            $this->transferSound = $this->config->getNested("Sounds.Transfer");
+            $this->openSound = $this->config->getNested("Sounds.UI");
+            $this->teleportTitle = $this->config->getNested("Titles.Teleport");
+            $this->transferTitle = $this->config->getNested("Titles.Transfer");
             array_push($this->list, $target);
         }
     }
@@ -211,7 +254,7 @@ class NaviCompass extends PluginBase implements Listener {
     }
     
     private function startQueryTask(string $host, int $port){
-        $this->getScheduler()->scheduleRepeatingTask(new QueryTaskCaller($this, $host, $port), 100);
+        $this->getScheduler()->scheduleRepeatingTask(new QueryTaskCaller($this, $host, $port), 200);
     }
     
     public function queryTaskCallback($result, string $host, int $port){
@@ -255,7 +298,10 @@ class NaviCompass extends PluginBase implements Listener {
         return true;
     }
     
-    public function serverList($player){
+    public function serverList(Player $player){
+        if(!in_array($this->openSound, [false, "false", "off"]) && ($sound = $this->getSound($this->openSound, $player)) !== null){
+            $player->getLevel()->addSound($sound);
+        }
         $form = new SimpleForm(function(Player $player, $data){
             if($data === null){
                 return;
@@ -263,16 +309,24 @@ class NaviCompass extends PluginBase implements Listener {
                 $value = explode(":", $this->list[$data]);
                 $value = str_replace("&", "§", $value);
                 if(strtolower($value[0]) == "ext"){
-                    $player->transfer($value[2], $value[3]);
+                    if(!in_array($this->transferSound, [false, "false", "off"]) && ($sound = $this->getSound($this->transferSound, $player)) !== null){
+                        $player->getLevel()->addSound($sound);
+                    }
+                    if(!in_array($this->transferTitle, [false, "false", "off"])){
+                        $player->addTitle($this->transferTitle);
+                    }
+                    $this->getScheduler()->scheduleDelayedTask(new TransferTask($this, $value[2], $value[3], $player), $this->config->getNested("Titles.Delay") * 20);
                 }else{
                     $cmdStr = $this->config->get("World-CMD");
                     $cmdStr = str_replace("{player}", $player->getName(), $cmdStr);
                     $cmdStr = str_replace("{world}", $value[2], $cmdStr);
-                    if($this->cmdMode == 0){
-                        $this->getServer()->getCommandMap()->dispatch($player, $cmdStr);
-                    }else{
-                        $this->getServer()->getCommandMap()->dispatch(new ConsoleCommandSender(), $cmdStr);
+                    if(!in_array($this->teleportSound, [false, "false", "off"]) && ($sound = $this->getSound($this->teleportSound, $player)) !== null){
+                        $player->getLevel()->addSound($sound);
                     }
+                    if(!in_array($this->teleportTitle, [false, "false", "off"])){
+                        $player->addTitle($this->teleportTitle);
+                    }
+                    $this->getScheduler()->scheduleDelayedTask(new TeleportTask($this, $cmdStr, $player), $this->config->getNested("Titles.Delay") * 20);
                 }
             }
             return;
@@ -288,11 +342,11 @@ class NaviCompass extends PluginBase implements Listener {
                 $subtext = $this->config->getNested("UI.Server-Button-Subtext");
                 $queryResult = $this->queryResults[$value[2] . ":" . $value[3]];
                 if($queryResult[0] === "online"){
-                    $subtext = str_replace("{status}", TF::GREEN . "Online" . TF::RESET, $subtext);
+                    $subtext = str_replace("{status}", $this->config->getNested("UI.Status-Format.Online") . TF::RESET, $subtext);
                     $subtext = str_replace("{current-players}", $queryResult[1], $subtext);
                     $subtext = str_replace("{max-players}", $queryResult[2], $subtext);
                 }else{
-                    $subtext = str_replace("{status}", TF::RED . "Offline" . TF::RESET, $subtext);
+                    $subtext = str_replace("{status}", $this->config->getNested("UI.Status-Format.Offline") . TF::RESET, $subtext);
                     $subtext = str_replace("{current-players}", "-", $subtext);
                     $subtext = str_replace("{max-players}", "-", $subtext);
                 }
@@ -302,6 +356,7 @@ class NaviCompass extends PluginBase implements Listener {
                 }
             }else{
                 $subtext = $this->config->getNested("UI.World-Button-Subtext");
+                $this->getServer()->loadLevel($value[2]);
                 $worldPlayerCount = sizeof($this->getServer()->getLevelByName($value[2])->getPlayers());
                 $subtext = str_replace("{current-players}", $worldPlayerCount, $subtext);
                 if(isset($value[3])){
@@ -321,6 +376,40 @@ class NaviCompass extends PluginBase implements Listener {
             }
         }
         $player->sendForm($form);
+    }
+    
+    public function getSound(string $asString, Player $player): ?Sound{
+        $pvec = $player->asVector3();
+        switch($asString){
+            case "anvil-break":
+                return new AnvilBreakSound($pvec);
+            case "anvil-fall":
+                return new AnvilFallSound($pvec);
+            case "anvil-use":
+                return new AnvilUseSound($pvec);
+            case "blaze-shoot":
+                return new BlazeShootSound($pvec);
+            case "click":
+                return new ClickSound($pvec);
+            case "door-bump":
+                return new DoorBumpSound($pvec);
+            case "door-crash":
+                return new DoorCrashSound($pvec);
+            case "enderman-teleport":
+                return new EndermanTeleportSound($pvec);
+            case "fizz":
+                return new FizzSound($pvec);
+            case "ghast-shoot":
+                return new GhastShootSound($pvec);
+            case "ghast":
+                return new GhastSound($pvec);
+            case "launch":
+                return new LaunchSound($pvec);
+            case "pop":
+                return new PopSound($pvec);
+            default:
+                return null;
+        }
     }
     
     public function onJoin(PlayerJoinEvent $event){

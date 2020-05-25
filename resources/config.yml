@@ -11,7 +11,7 @@
 #                                         $$ |                                      /  \__$$ |
 #                                         $$ |                                      $$    $$/ 
 #                                         $$/                                        $$$$$$/       
-VERSION: "2.1.0" # Internal use only
+VERSION: "2.2.0" # Internal use only
 
 # Choose your transfer type:
 # "external" will use an IP address and port to move players between SERVERS
@@ -29,6 +29,46 @@ World-CMD: "multiworld tp {world} {player}"
 # Don't worry about this if you're only using the EXTERNAL transfer type
 # Options are: "console" and "player"
 World-CMD-Mode: "console"
+
+# Add a small delay before transferring/teleporting for a title to show
+Titles:
+  # Set the delay to show the title before transferring/teleporting
+  # This value is in seconds (default is 2 seconds)
+  # Set this to false or 0 for no delay
+  Delay: 2
+
+  # Set the formatting for the title shown to players when transferring SERVERS
+  Transfer: "§a§oTransferring..."
+
+  # Set the formatting for the title shown to players when teleporting between WORLDS
+  Teleport: "§a§oTeleporting..."
+
+# A list of available sounds can be found below
+# Set the options below to false if you'd rather have no sound play during these events
+Sounds:
+  # Choose what sound (if any) to play when opening the UI
+  UI: "pop"
+
+  # Choose what sound (if any) to play while transferring SERVERS
+  Transfer: "blaze-shoot"
+
+  # Choose what sound (if any) to play while teleporting between WORLDS
+  Teleport: "anvil-break"
+
+# Available PocketMine sounds list
+# anvil-break
+# anvil-fall
+# anvil-use
+# blaze-shoot
+# click
+# door-bump
+# door-crash
+# enderman-teleport
+# fizz
+# ghast-shoot
+# ghast
+# launch
+# pop
 
 Command:
   # Choose whether the command method should be enabled
@@ -72,14 +112,22 @@ UI:
   # This is the title of the transfer UI
   Title: "§9Server List"
 
-  # This is the message that will show under your title on the transfer UI
+  # This is the message that will show under the title on the transfer UI
   Message: "§aChoose a server to transfer to!"
+
+  Status-Format:
+
+    # Edit the format for online servers
+    Online: "§aOnline"
+
+    # This is where you edit the format for offline servers
+    Offline: "§cOffline"
 
   # This is the message displayed under each SERVER button
   # Don't worry about this if you're only using the INTERNAL transfer type
   # Use '{current-players}' for the server's current player count
   # Use '{max-players}' for the server's max player count
-  # Use '{status}' to show whether the server is online or offline ('Online' will show as green; 'Offline' will show as red)
+  # Use '{status}' to show whether the server is online or offline (the colors can be customized under Status-Format)
   Server-Button-Subtext: "§r{status} §8(§a{current-players}§8/§b{max-players}§8)"
 
   # This is the message displayed under each WORLD button
