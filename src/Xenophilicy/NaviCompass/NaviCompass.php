@@ -44,9 +44,34 @@ use Xenophilicy\NaviCompass\Task\QueryTaskCaller;
 use Xenophilicy\NaviCompass\Task\TeleportTask;
 use Xenophilicy\NaviCompass\Task\TransferTask;
 
+/**
+ * Class NaviCompass
+ * @package Xenophilicy\NaviCompass
+ */
 class NaviCompass extends PluginBase implements Listener {
     
     private static $plugin;
+    /**
+     * @var int
+     */
+    public $cmdMode;
+    public $transferSound;
+    /**
+     * @var mixed|null
+     */
+    public $teleportTitle;
+    /**
+     * @var mixed|null
+     */
+    public $delay;
+    /**
+     * @var mixed|null
+     */
+    public $transferTitle;
+    /**
+     * @var mixed|null
+     */
+    public $teleportSound;
     /**
      * @var string
      */
@@ -84,34 +109,16 @@ class NaviCompass extends PluginBase implements Listener {
      * @var array
      */
     private $list;
-    /**
-     * @var int
-     */
-    public $cmdMode;
     private $queryResults;
-    public $transferSound;
     /**
      * @var mixed|null
      */
     private $openSound;
-    /**
-     * @var mixed|null
-     */
-    public $teleportTitle;
-    /**
-     * @var mixed|null
-     */
-    public $delay;
-    /**
-     * @var mixed|null
-     */
-    public $transferTitle;
-    /**
-     * @var mixed|null
-     */
-    public $teleportSound;
     
-    public static function getPLugin(){
+    /**
+     * @return mixed
+     */
+    public static function getPlugin(){
         return self::$plugin;
     }
     
@@ -253,10 +260,19 @@ class NaviCompass extends PluginBase implements Listener {
         $this->enchInst = new EnchantmentInstance($enchantment, 1);
     }
     
+    /**
+     * @param string $host
+     * @param int $port
+     */
     private function startQueryTask(string $host, int $port){
         $this->getScheduler()->scheduleRepeatingTask(new QueryTaskCaller($this, $host, $port), 200);
     }
     
+    /**
+     * @param $result
+     * @param string $host
+     * @param int $port
+     */
     public function queryTaskCallback($result, string $host, int $port){
         $this->queryResults[$host . ":" . $port] = $result;
     }
@@ -298,6 +314,9 @@ class NaviCompass extends PluginBase implements Listener {
         return true;
     }
     
+    /**
+     * @param Player $player
+     */
     public function serverList(Player $player){
         if(!in_array($this->openSound, [false, "false", "off"]) && ($sound = $this->getSound($this->openSound, $player)) !== null){
             $player->getLevel()->addSound($sound);
@@ -412,6 +431,9 @@ class NaviCompass extends PluginBase implements Listener {
         }
     }
     
+    /**
+     * @param PlayerJoinEvent $event
+     */
     public function onJoin(PlayerJoinEvent $event){
         if($this->selectorSupport){
             $player = $event->getPlayer();
@@ -424,6 +446,9 @@ class NaviCompass extends PluginBase implements Listener {
         }
     }
     
+    /**
+     * @param PlayerQuitEvent $event
+     */
     public function onQuit(PlayerQuitEvent $event){
         $player = $event->getPlayer();
         $items = $player->getInventory()->getContents();
@@ -443,6 +468,9 @@ class NaviCompass extends PluginBase implements Listener {
         return false;
     }
     
+    /**
+     * @param PlayerInteractEvent $event
+     */
     public function onInteract(PlayerInteractEvent $event){
         if($this->selectorSupport){
             $player = $event->getPlayer();
@@ -453,6 +481,9 @@ class NaviCompass extends PluginBase implements Listener {
         }
     }
     
+    /**
+     * @param InventoryTransactionEvent $event
+     */
     public function onInventoryTransaction(InventoryTransactionEvent $event){
         if($this->selectorSupport && $this->forceSlot){
             $transaction = $event->getTransaction();

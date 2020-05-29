@@ -19,11 +19,20 @@ use pocketmine\scheduler\AsyncTask;
 use pocketmine\Server;
 use Xenophilicy\NaviCompass\NaviCompass;
 
+/**
+ * Class QueryTask
+ * @package Xenophilicy\NaviCompass\Task
+ */
 class QueryTask extends AsyncTask {
     
     private $host;
     private $port;
     
+    /**
+     * QueryTask constructor.
+     * @param string $host
+     * @param int $port
+     */
     public function __construct(string $host, int $port){
         $this->host = $host;
         $this->port = $port;
@@ -39,17 +48,14 @@ class QueryTask extends AsyncTask {
         }
     }
     
-    public function onCompletion(Server $server){
-        NaviCompass::getPlugin()->queryTaskCallback($this->getResult(), $this->host, $this->port);
-    }
-    
-    // This is an edited GitHub Gist by xBeastMode → https://gist.github.com/xBeastMode/89a9d85c21ec5f42f14db49550ea8e5c
-    
+    /**
+     * @param string $host
+     * @param int $port
+     * @return false|string[]|null
+     */
     private function sendQuery(string $host, int $port){
-        $timeout = 5;
-        $socket = @fsockopen("udp://" . $host, $port);
+        $socket = @fsockopen("udp://" . $host, $port, $timeout);
         if(!$socket) return null;
-        stream_set_timeout($socket, $timeout);
         $online = @fwrite($socket, "\xFE\xFD\x09\x10\x20\x30\x40\xFF\xFF\xFF\x01");
         if(!$online) return null;
         $challenge = @fread($socket, 1400);
@@ -68,5 +74,14 @@ class QueryTask extends AsyncTask {
         array_pop($response);
         @fclose($socket);
         return $response;
+    }
+    
+    // This is an edited GitHub Gist by xBeastMode → https://gist.github.com/xBeastMode/89a9d85c21ec5f42f14db49550ea8e5c
+    
+    /**
+     * @param Server $server
+     */
+    public function onCompletion(Server $server){
+        NaviCompass::getPlugin()->queryTaskCallback($this->getResult(), $this->host, $this->port);
     }
 }

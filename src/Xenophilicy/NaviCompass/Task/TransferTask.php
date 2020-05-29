@@ -19,6 +19,10 @@ use pocketmine\Player;
 use pocketmine\scheduler\Task;
 use Xenophilicy\NaviCompass\NaviCompass;
 
+/**
+ * Class TransferTask
+ * @package Xenophilicy\NaviCompass\Task
+ */
 class TransferTask extends Task {
     
     private $plugin;
@@ -26,6 +30,13 @@ class TransferTask extends Task {
     private $port;
     private $player;
     
+    /**
+     * TransferTask constructor.
+     * @param NaviCompass $plugin
+     * @param string $host
+     * @param int $port
+     * @param Player $player
+     */
     public function __construct(NaviCompass $plugin, string $host, int $port, Player $player){
         $this->plugin = $plugin;
         $this->host = $host;
@@ -33,6 +44,9 @@ class TransferTask extends Task {
         $this->player = $player;
     }
     
+    /**
+     * @param int $currentTick
+     */
     public function onRun(int $currentTick){
         $this->player->transfer($this->host, $this->port);
     }

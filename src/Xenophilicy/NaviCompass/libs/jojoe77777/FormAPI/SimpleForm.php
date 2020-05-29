@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Xenophilicy\NaviCompass\libs\jojoe77777\FormAPI;
 
+/**
+ * Class SimpleForm
+ * @package Xenophilicy\NaviCompass\libs\jojoe77777\FormAPI
+ */
 class SimpleForm extends Form {
     
     const IMAGE_TYPE_PATH = 0;
@@ -24,6 +28,9 @@ class SimpleForm extends Form {
         $this->data["content"] = $this->content;
     }
     
+    /**
+     * @param $data
+     */
     public function processData(&$data): void{
         $data = $this->labelMap[$data] ?? null;
     }
