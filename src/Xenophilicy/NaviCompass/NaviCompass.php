@@ -137,7 +137,7 @@ class NaviCompass extends PluginBase implements Listener {
         $this->config->getAll();
         $configVersion = $this->config->get("VERSION");
         $this->pluginVersion = $this->getDescription()->getVersion();
-        if($configVersion < $this->pluginVersion){
+        if($configVersion < "2.2.0"){
             $this->getLogger()->warning("You have updated NaviCompass to v" . $this->pluginVersion . " but have a config from v$configVersion! Please delete your old config for new features to be enabled and to prevent unwanted errors!");
             $this->getServer()->getPluginManager()->disablePlugin($this);
             return;
