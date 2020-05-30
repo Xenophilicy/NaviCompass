@@ -22,24 +22,12 @@ use pocketmine\event\player\{PlayerInteractEvent, PlayerJoinEvent, PlayerQuitEve
 use pocketmine\inventory\transaction\action\{DropItemAction, SlotChangeAction};
 use pocketmine\item\enchantment\{Enchantment, EnchantmentInstance};
 use pocketmine\item\Item;
-use pocketmine\level\sound\AnvilBreakSound;
-use pocketmine\level\sound\AnvilFallSound;
-use pocketmine\level\sound\AnvilUseSound;
-use pocketmine\level\sound\BlazeShootSound;
-use pocketmine\level\sound\ClickSound;
-use pocketmine\level\sound\DoorBumpSound;
-use pocketmine\level\sound\DoorCrashSound;
-use pocketmine\level\sound\EndermanTeleportSound;
-use pocketmine\level\sound\FizzSound;
-use pocketmine\level\sound\GhastShootSound;
-use pocketmine\level\sound\GhastSound;
-use pocketmine\level\sound\LaunchSound;
-use pocketmine\level\sound\PopSound;
-use pocketmine\level\sound\Sound;
+use pocketmine\network\mcpe\protocol\PlaySoundPacket;
 use pocketmine\Player;
 use pocketmine\plugin\PluginBase;
 use pocketmine\utils\{Config, TextFormat as TF};
 use Xenophilicy\NaviCompass\libs\jojoe77777\FormAPI\SimpleForm;
+use Xenophilicy\NaviCompass\Task\CompassCooldownTask;
 use Xenophilicy\NaviCompass\Task\QueryTaskCaller;
 use Xenophilicy\NaviCompass\Task\TeleportTask;
 use Xenophilicy\NaviCompass\Task\TransferTask;
@@ -50,70 +38,18 @@ use Xenophilicy\NaviCompass\Task\TransferTask;
  */
 class NaviCompass extends PluginBase implements Listener {
     
+    /**
+     * @var array
+     */
+    public static $settings;
+    /**
+     * @var NaviCompass
+     */
     private static $plugin;
-    /**
-     * @var int
-     */
-    public $cmdMode;
-    public $transferSound;
-    /**
-     * @var mixed|null
-     */
-    public $teleportTitle;
-    /**
-     * @var mixed|null
-     */
-    public $delay;
-    /**
-     * @var mixed|null
-     */
-    public $transferTitle;
-    /**
-     * @var mixed|null
-     */
-    public $teleportSound;
-    /**
-     * @var string
-     */
-    private $pluginVersion;
-    /**
-     * @var bool
-     */
-    private $selectorSupport;
-    /**
-     * @var string
-     */
-    private $selectorName;
-    /**
-     * @var array
-     */
-    private $selectorLore;
-    /**
-     * @var mixed|null
-     */
-    private $itemType;
-    /**
-     * @var mixed|null
-     */
-    private $forceSlot;
-    /**
-     * @var bool
-     */
-    private $commandSupport;
-    /**
-     * @var mixed|string|string[]|null
-     */
-    private $cmdName;
-    private $enchInst;
-    /**
-     * @var array
-     */
-    private $list;
+    public $compassCooldown = [];
     private $queryResults;
-    /**
-     * @var mixed|null
-     */
-    private $openSound;
+    private $list;
+    private $enchInst;
     
     /**
      * @return mixed
@@ -127,129 +63,92 @@ class NaviCompass extends PluginBase implements Listener {
         $this->getServer()->getPluginManager()->registerEvents($this, $this);
         $configPath = $this->getDataFolder() . "config.yml";
         if(!file_exists($configPath)){
-            $this->getLogger()->critical("It appears that this is the first time you are using NaviCompass! This plugin does not function with the default config.yml, so please edit it to your preferred settings before attempting to use it.");
-            $this->saveDefaultConfig();
-            $this->getServer()->getPluginManager()->disablePlugin($this);
-            return;
+            $this->getLogger()->notice("It appears that this is the first time you are using NaviCompass! Before reporting that the plugin doesn't work, please be sure your config file is setup correctly.");
         }
         $this->saveDefaultConfig();
         $this->config = new Config($configPath, Config::YAML);
-        $this->config->getAll();
-        $configVersion = $this->config->get("VERSION");
-        $this->pluginVersion = $this->getDescription()->getVersion();
-        if($configVersion < "2.2.0"){
-            $this->getLogger()->warning("You have updated NaviCompass to v" . $this->pluginVersion . " but have a config from v$configVersion! Please delete your old config for new features to be enabled and to prevent unwanted errors!");
+        self::$settings = $this->config->getAll();
+        $configVersion = self::$settings["VERSION"];
+        $pluginVersion = $this->getDescription()->getVersion();
+        if($configVersion < "2.3.0"){
+            $this->getLogger()->warning("You have updated NaviCompass to v" . $pluginVersion . " but have a config from v$configVersion! Please delete your old config for new features to be enabled and to prevent unwanted errors!");
             $this->getServer()->getPluginManager()->disablePlugin($this);
             return;
         }
-        if($this->config->getNested("Selector.Enabled")){
-            $this->selectorSupport = true;
-            $this->createEnchant();
-            $this->selectorName = TF::ITALIC . (str_replace("&", "§", $this->config->getNested("Selector.Name")));
-            $this->selectorLore = [str_replace("&", "§", $this->config->getNested("Selector.Lore"))];
-            $this->itemType = $this->config->getNested("Selector.Item");
-            $this->forceSlot = $this->config->getNested("Selector.Force-Slot");
-        }else{
-            $this->selectorSupport = false;
-            $this->getLogger()->info("Selector item disabled in config...");
-        }
-        if($this->config->getNested("Command.Enabled")){
-            $this->commandSupport = true;
-            $this->cmdName = str_replace("/", "", $this->config->getNested("Command.Name"));
-            if($this->cmdName == null || $this->cmdName == ""){
+        if(self::$settings["Selector"]["Enabled"]) $this->createEnchant();
+        if(self::$settings["Command"]["Enabled"]){
+            $cmdName = str_replace("/", "", self::$settings["Command"]["Name"]);
+            if($cmdName == null || $cmdName == ""){
                 $this->getLogger()->critical("Invalid UI command string found, disabling plugin...");
                 $this->getServer()->getPluginManager()->disablePlugin($this);
                 return;
             }else{
-                $cmd = new PluginCommand($this->cmdName, $this);
-                $cmd->setDescription($this->config->getNested("Command.Description"));
-                if($this->config->getNested("Command.Permission.Enabled")){
-                    $cmd->setPermission($this->config->getNested("Command.Permission.Node"));
+                $cmd = new PluginCommand($cmdName, $this);
+                $cmd->setDescription(self::$settings["Command"]["Description"]);
+                if(self::$settings["Command"]["Permission"]["Enabled"]){
+                    $cmd->setPermission(self::$settings["Command"]["Permission"]["Node"]);
                 }
-                $this->getServer()->getCommandMap()->register("NaviCompass", $cmd, $this->cmdName);
+                $this->getServer()->getCommandMap()->register("NaviCompass", $cmd, $cmdName);
             }
         }else{
-            $this->commandSupport = false;
             $this->getLogger()->info("Command method disabled in config...");
         }
-        $transferType = $this->config->get("Transfer-Type");
+        $transferType = self::$settings["Transfer-Type"];
         switch(strtolower($transferType)){
             case "external":
-                $extLimit = false;
                 break;
             case "hybrid":
             case "internal":
-                if($this->config->get("World-CMD") == null || $this->config->get("World-CMD") == ""){
-                    $this->getLogger()->critical("Null world command string found, limiting to external use!");
-                    $extLimit = true;
+                $cmd = self::$settings["World-CMD"];
+                if($cmd == null || $cmd == ""){
+                    $this->getLogger()->critical("Invalid transfer type! Input type: " . $transferType . " not supported, disabling plugin!");
+                    $this->getServer()->getPluginManager()->disablePlugin($this);
+                    return;
                 }else{
-                    $mode = $this->config->get("World-CMD-Mode");
-                    if(strtolower($mode) == "player"){
-                        $extLimit = false;
-                        $this->cmdMode = 0;
-                    }elseif(strtolower($mode) == "console"){
-                        $extLimit = false;
-                        $this->cmdMode = 1;
-                    }else{
-                        $this->getLogger()->critical("Null world command mode found, limiting to external use!");
-                        $extLimit = true;
+                    $mode = strtolower(self::$settings["World-CMD-Mode"]);
+                    if($mode !== "player" && $mode !== "console"){
+                        $this->getLogger()->critical("Invalid world command mode found! Input mode: " . $transferType . " not supported, disabling plugin!");
+                        $this->getServer()->getPluginManager()->disablePlugin($this);
+                        return;
                     }
                 }
                 break;
-            case false:
-            case null:
-                $this->getLogger()->critical("Null transfer type found, disabling plugin!");
-                $this->getServer()->getPluginManager()->disablePlugin($this);
-                return;
             default:
                 $this->getLogger()->critical("Invalid transfer type! Input type: " . $transferType . " not supported, disabling plugin!");
                 $this->getServer()->getPluginManager()->disablePlugin($this);
                 return;
         }
         $this->list = [];
-        foreach($this->config->get("List") as $target){
+        foreach(self::$settings["List"] as $target){
             unset($search);
             $value = explode(":", $target);
-            if(strtolower($value[0]) === "ext"){
-                if(isset($value[4])){
-                    $search = $value[4];
-                }
-                $this->queryResults[$value[2] . ":" . $value[3]] = [];
-                $this->startQueryTask($value[2], $value[3]);
-            }elseif(strtolower($value[0]) === "int" && !$extLimit){
-                if(!$this->getServer()->isLevelGenerated($value[2])){
-                    if($value[2] == "xenoCreative"){
-                        $this->getLogger()->critical("This plugin does not function with the default config.yml, so please edit it to your preferred settings before attempting to use it. Plugin will remain disabled until default config is changed.");
-                        $this->getServer()->getPluginManager()->disablePlugin($this);
-                        return;
-                    }else{
-                        $this->getLogger()->critical("Invalid world name! Name: " . $value[2] . " was not found, be sure to use the name of the world folder for the 'WorldAlias' key in the config!");
-                        continue;
+            $mode = strtolower($value[0]);
+            switch($mode){
+                case "ext":
+                    if(isset($value[4])){
+                        $search = $value[4];
                     }
-                }
-                if(isset($value[3])){
-                    $search = $value[3];
-                    if(!isset($value[4]) || $value[4] === ""){
-                        $this->getLogger()->warning("Null path/URL! Input: " . $value[1]);
-                        continue;
-                    }
-                }
-                if(isset($search)){
-                    switch(strtolower($search)){
-                        case'url':
-                        case'path':
-                            break;
-                        default:
-                            $this->getLogger()->warning("Invalid image type! Input: " . $value[1] . TF::RESET . TF::YELLOW . " Image type: " . $search . TF::RESET . TF::YELLOW . " not supported. ");
+                    $this->queryResults[$value[2] . ":" . $value[3]] = [];
+                    $this->startQueryTask($value[2], $value[3]);
+                    break;
+                case "int":
+                case "wd":
+                    if(isset($value[3])){
+                        $search = $value[3];
+                        if(!isset($value[4]) || $value[4] === ""){
+                            $this->getLogger()->warning("Invalid path/URL! Input: " . $value[1]);
                             continue 2;
+                        }
                     }
-                }
+                    break;
+                default:
+                    $this->getLogger()->warning("Invalid listing type! Invalid type: " . $value[0]);
+                    continue 2;
+                    break;
             }
-            $this->teleportSound = $this->config->getNested("Sounds.Teleport");
-            $this->transferSound = $this->config->getNested("Sounds.Transfer");
-            $this->openSound = $this->config->getNested("Sounds.UI");
-            $this->teleportTitle = $this->config->getNested("Titles.Teleport");
-            $this->transferTitle = $this->config->getNested("Titles.Transfer");
+            if(isset($search)){
+                if(!$this->checkImagePath($value, $search)) continue;
+            }
             array_push($this->list, $target);
         }
     }
@@ -268,6 +167,18 @@ class NaviCompass extends PluginBase implements Listener {
         $this->getScheduler()->scheduleRepeatingTask(new QueryTaskCaller($this, $host, $port), 200);
     }
     
+    private function checkImagePath(array $value, string $search): bool{
+        switch(strtolower($search)){
+            case'url':
+            case'path':
+                break;
+            default:
+                $this->getLogger()->warning("Invalid image type! Input: " . $value[1] . TF::RESET . TF::YELLOW . " Image type: " . $search . TF::RESET . TF::YELLOW . " not supported.");
+                return false;
+        }
+        return true;
+    }
+    
     /**
      * @param $result
      * @param string $host
@@ -280,33 +191,39 @@ class NaviCompass extends PluginBase implements Listener {
     public function onCommand(CommandSender $sender, Command $command, string $label, array $args): bool{
         if($command->getName() == "navicompass"){
             $sender->sendMessage(TF::GRAY . "---" . TF::GOLD . " NaviCompass " . TF::GRAY . "---");
-            $sender->sendMessage(TF::YELLOW . "Version: " . TF::AQUA . $this->pluginVersion);
+            $sender->sendMessage(TF::YELLOW . "Version: " . TF::AQUA . $this->getDescription()->getVersion());
             $sender->sendMessage(TF::YELLOW . "Description: " . TF::AQUA . "View servers or worlds");
-            if($this->selectorSupport){
+            if(self::$settings["Selector"]["Enabled"]){
                 $sender->sendMessage(TF::YELLOW . "Selector: " . TF::GREEN . "Enabled");
             }else{
                 $sender->sendMessage(TF::YELLOW . "Selector: " . TF::RED . "Disabled");
             }
-            if($this->commandSupport){
+            if(self::$settings["Command"]["Enabled"]){
                 $sender->sendMessage(TF::YELLOW . "Command: " . TF::GREEN . "Enabled");
-                $sender->sendMessage(TF::LIGHT_PURPLE . " - " . TF::BLUE . "/" . $this->cmdName);
+                $sender->sendMessage(TF::LIGHT_PURPLE . " - " . TF::BLUE . "/" . str_replace("/", "", self::$settings["Command"]["Name"]));
             }else{
                 $sender->sendMessage(TF::YELLOW . "Command: " . TF::RED . "Disabled");
             }
             $sender->sendMessage(TF::GRAY . "-------------------");
         }
-        if($this->commandSupport && $command->getName() == $this->cmdName){
+        if(self::$settings["Command"]["Enabled"] && $command->getName() == str_replace("/", "", self::$settings["Command"]["Name"])){
             if($sender instanceof Player){
                 $this->serverList($sender);
             }else{
-                $sender->sendMessage(" " . $this->config->getNested("UI.Title"));
+                $sender->sendMessage(" " . self::$settings["UI"]["Title"]);
                 foreach($this->list as $target){
                     $value = explode(":", $target);
                     $value = str_replace("&", "§", $value);
-                    if(strtolower($value[0]) == "ext"){
-                        $sender->sendMessage(TF::YELLOW . "Name: " . $value[1] . TF::RESET . TF::YELLOW . " | IP: " . $value[2] . " | Port: " . $value[3]);
-                    }else{
-                        $sender->sendMessage(TF::YELLOW . "Name: " . $value[1] . TF::RESET . TF::YELLOW . " | Alias: " . $value[2]);
+                    switch(strtolower($value[0])){
+                        case "ext":
+                            $sender->sendMessage(TF::YELLOW . "Name: " . $value[1] . TF::RESET . TF::YELLOW . " | IP: " . $value[2] . " | Port: " . $value[3]);
+                            break;
+                        case "int":
+                            $sender->sendMessage(TF::YELLOW . "Name: " . $value[1] . TF::RESET . TF::YELLOW . " | Alias: " . $value[2]);
+                            break;
+                        case "wd":
+                            $sender->sendMessage(TF::YELLOW . "Name: " . $value[1] . TF::RESET . TF::YELLOW . " | Server: " . $value[2]);
+                            break;
                     }
                 }
             }
@@ -318,70 +235,92 @@ class NaviCompass extends PluginBase implements Listener {
      * @param Player $player
      */
     public function serverList(Player $player){
-        if(!in_array($this->openSound, [false, "false", "off"]) && ($sound = $this->getSound($this->openSound, $player)) !== null){
-            $player->getLevel()->addSound($sound);
+        if(!in_array(self::$settings["Sounds"]["UI"], [false, "false", "off"])){
+            $this->playSound(self::$settings["Sounds"]["UI"], $player);
         }
         $form = new SimpleForm(function(Player $player, $data){
-            if($data === null){
+            if($data === null || count($this->list) === 0){
                 return;
             }else{
                 $value = explode(":", $this->list[$data]);
                 $value = str_replace("&", "§", $value);
-                if(strtolower($value[0]) == "ext"){
-                    if(!in_array($this->transferSound, [false, "false", "off"]) && ($sound = $this->getSound($this->transferSound, $player)) !== null){
-                        $player->getLevel()->addSound($sound);
-                    }
-                    if(!in_array($this->transferTitle, [false, "false", "off"])){
-                        $player->addTitle($this->transferTitle);
-                    }
-                    $this->getScheduler()->scheduleDelayedTask(new TransferTask($this, $value[2], $value[3], $player), $this->config->getNested("Titles.Delay") * 20);
-                }else{
-                    $cmdStr = $this->config->get("World-CMD");
-                    $cmdStr = str_replace("{player}", $player->getName(), $cmdStr);
-                    $cmdStr = str_replace("{world}", $value[2], $cmdStr);
-                    if(!in_array($this->teleportSound, [false, "false", "off"]) && ($sound = $this->getSound($this->teleportSound, $player)) !== null){
-                        $player->getLevel()->addSound($sound);
-                    }
-                    if(!in_array($this->teleportTitle, [false, "false", "off"])){
-                        $player->addTitle($this->teleportTitle);
-                    }
-                    $this->getScheduler()->scheduleDelayedTask(new TeleportTask($this, $cmdStr, $player), $this->config->getNested("Titles.Delay") * 20);
+                $delay = self::$settings["Titles"]["Delay"];
+                switch(strtolower($value[0])){
+                    case "ext":
+                        $this->sendActions("Transfer", $player);
+                        $this->getScheduler()->scheduleDelayedTask(new TransferTask($value[2], $value[3], $player), $delay * 20);
+                        break;
+                    case "int":
+                        $cmdStr = self::$settings["World-CMD"];
+                        $cmdStr = str_replace("{player}", $player->getName(), $cmdStr);
+                        $cmdStr = str_replace("{world}", $value[2], $cmdStr);
+                        $this->sendActions("Teleport", $player);
+                        $this->getScheduler()->scheduleDelayedTask(new TeleportTask($this, $cmdStr, $player), $delay * 20);
+                        break;
+                    case "wd":
+                        $cmdStr = "server " . $value[2];
+                        $this->sendActions("Transfer", $player);
+                        $this->getScheduler()->scheduleDelayedTask(new TeleportTask($this, $cmdStr, $player, true), $delay * 20);
+                        break;
                 }
             }
             return;
         });
-        $form->setTitle($this->config->getNested("UI.Title"));
-        $form->setContent($this->config->getNested("UI.Message"));
+        if(count($this->list) === 0){
+            $form->setTitle(TF::RED . "Nothing to see here");
+            $form->setContent(TF::YELLOW . "You have not added any servers or worlds in the config.yml file yet! Add some and you'll see them appear here in the UI!");
+            $form->addButton(TF::RED . "Close");
+            $player->sendForm($form);
+            return;
+        }
+        $form->setTitle(self::$settings["UI"]["Title"]);
+        $form->setContent(self::$settings["UI"]["Message"]);
         foreach($this->list as $target){
             $value = explode(":", $target);
             $value = str_replace("&", "§", $value);
             unset($search);
             $file = "";
-            if(strtolower($value[0]) == "ext"){
-                $subtext = $this->config->getNested("UI.Server-Button-Subtext");
-                $queryResult = $this->queryResults[$value[2] . ":" . $value[3]];
-                if($queryResult[0] === "online"){
-                    $subtext = str_replace("{status}", $this->config->getNested("UI.Status-Format.Online") . TF::RESET, $subtext);
-                    $subtext = str_replace("{current-players}", $queryResult[1], $subtext);
-                    $subtext = str_replace("{max-players}", $queryResult[2], $subtext);
-                }else{
-                    $subtext = str_replace("{status}", $this->config->getNested("UI.Status-Format.Offline") . TF::RESET, $subtext);
-                    $subtext = str_replace("{current-players}", "-", $subtext);
-                    $subtext = str_replace("{max-players}", "-", $subtext);
-                }
-                if(isset($value[4])){
-                    $search = $value[4];
-                    $file = $value[5];
-                }
-            }else{
-                $subtext = $this->config->getNested("UI.World-Button-Subtext");
-                $this->getServer()->loadLevel($value[2]);
-                $worldPlayerCount = sizeof($this->getServer()->getLevelByName($value[2])->getPlayers());
-                $subtext = str_replace("{current-players}", $worldPlayerCount, $subtext);
-                if(isset($value[3])){
-                    $search = $value[3];
-                    $file = $value[4];
-                }
+            $subtext = "";
+            switch(strtolower($value[0])){
+                case "ext":
+                    $subtext = self::$settings["UI"]["Subtext"]["Server"];
+                    $queryResult = $this->queryResults[$value[2] . ":" . $value[3]];
+                    if($queryResult[0] === "online"){
+                        $subtext = str_replace("{status}", self::$settings["UI"]["Status-Format"]["Online"] . TF::RESET, $subtext);
+                        $subtext = str_replace("{current-players}", $queryResult[1], $subtext);
+                        $subtext = str_replace("{max-players}", $queryResult[2], $subtext);
+                    }else{
+                        $subtext = str_replace("{status}", self::$settings["UI"]["Status-Format"]["Offline"] . TF::RESET, $subtext);
+                        $subtext = str_replace("{current-players}", "-", $subtext);
+                        $subtext = str_replace("{max-players}", "-", $subtext);
+                    }
+                    if(isset($value[4])){
+                        $search = $value[4];
+                        $file = $value[5];
+                    }
+                    break;
+                case "int":
+                    $subtext = self::$settings["UI"]["Subtext"]["World"];
+                    $this->getServer()->loadLevel($value[2]);
+                    $level = $this->getServer()->getLevelByName($value[2]);
+                    if(is_null($level)){
+                        $worldPlayerCount = 0;
+                    }else{
+                        $worldPlayerCount = sizeof($level->getPlayers());
+                    }
+                    $subtext = str_replace("{current-players}", $worldPlayerCount, $subtext);
+                    if(isset($value[3])){
+                        $search = $value[3];
+                        $file = $value[4];
+                    }
+                    break;
+                case "wd":
+                    $subtext = self::$settings["UI"]["Subtext"]["WaterDog"];
+                    if(isset($value[3])){
+                        $search = $value[3];
+                        $file = $value[4];
+                    }
+                    break;
             }
             if(isset($search)){
                 if($search == "url"){
@@ -397,37 +336,31 @@ class NaviCompass extends PluginBase implements Listener {
         $player->sendForm($form);
     }
     
-    public function getSound(string $asString, Player $player): ?Sound{
-        $pvec = $player->asVector3();
-        switch($asString){
-            case "anvil-break":
-                return new AnvilBreakSound($pvec);
-            case "anvil-fall":
-                return new AnvilFallSound($pvec);
-            case "anvil-use":
-                return new AnvilUseSound($pvec);
-            case "blaze-shoot":
-                return new BlazeShootSound($pvec);
-            case "click":
-                return new ClickSound($pvec);
-            case "door-bump":
-                return new DoorBumpSound($pvec);
-            case "door-crash":
-                return new DoorCrashSound($pvec);
-            case "enderman-teleport":
-                return new EndermanTeleportSound($pvec);
-            case "fizz":
-                return new FizzSound($pvec);
-            case "ghast-shoot":
-                return new GhastShootSound($pvec);
-            case "ghast":
-                return new GhastSound($pvec);
-            case "launch":
-                return new LaunchSound($pvec);
-            case "pop":
-                return new PopSound($pvec);
-            default:
-                return null;
+    /**
+     * @param string $soundName
+     * @param Player $player
+     */
+    public function playSound(string $soundName, Player $player){
+        $sound = new PlaySoundPacket();
+        $sound->x = $player->getX();
+        $sound->y = $player->getY();
+        $sound->z = $player->getZ();
+        $sound->volume = 1;
+        $sound->pitch = 1;
+        $sound->soundName = $soundName;
+        $this->getServer()->broadcastPacket([$player], $sound);
+    }
+    
+    /**
+     * @param string $type
+     * @param Player $player
+     */
+    private function sendActions(string $type, Player $player){
+        if(!in_array(self::$settings["Sounds"][$type], [false, "false", "off"])){
+            $this->playSound(self::$settings["Sounds"][$type], $player);
+        }
+        if(!in_array(self::$settings["Titles"][$type], [false, "false", "off"])){
+            $player->addTitle(self::$settings["Titles"][$type]);
         }
     }
     
@@ -435,13 +368,13 @@ class NaviCompass extends PluginBase implements Listener {
      * @param PlayerJoinEvent $event
      */
     public function onJoin(PlayerJoinEvent $event){
-        if($this->selectorSupport){
+        if(self::$settings["Selector"]["Enabled"]){
             $player = $event->getPlayer();
-            $item = Item::get($this->itemType);
-            $item->setCustomName($this->selectorName);
-            $item->setLore($this->selectorLore);
+            $item = Item::get(self::$settings["Selector"]["Item"]);
+            $item->setCustomName(self::$settings["Selector"]["Name"]);
+            $item->setLore([self::$settings["Selector"]["Lore"]]);
             $item->addEnchantment($this->enchInst);
-            $slot = $this->config->getNested("Selector.Slot");
+            $slot = self::$settings["Selector"]["Slot"];
             $player->getInventory()->setItem($slot, $item, true);
         }
     }
@@ -460,8 +393,8 @@ class NaviCompass extends PluginBase implements Listener {
     }
     
     private function isSelectorItem(Item $item): bool{
-        if($this->selectorSupport){
-            if($item->getCustomName() == $this->selectorName && $item->getId() == $this->itemType && $item->getLore() == $this->selectorLore){
+        if(self::$settings["Selector"]["Enabled"]){
+            if($item->getCustomName() == self::$settings["Selector"]["Name"] && $item->getId() == self::$settings["Selector"]["Item"] && $item->getLore() == [self::$settings["Selector"]["Lore"]]){
                 return true;
             }
         }
@@ -472,12 +405,21 @@ class NaviCompass extends PluginBase implements Listener {
      * @param PlayerInteractEvent $event
      */
     public function onInteract(PlayerInteractEvent $event){
-        if($this->selectorSupport){
+        if(self::$settings["Selector"]["Enabled"]){
             $player = $event->getPlayer();
             $item = $player->getInventory()->getItemInHand();
-            if($this->isSelectorItem($item)){
-                $this->serverList($player);
+            if(!$this->isSelectorItem($item)) return;
+            $event->setCancelled();
+            if(self::$settings["Selector"]["Cooldown"]["Enabled"]){
+                $msg = self::$settings["Selector"]["Cooldown"]["Message"];
+                if(isset($this->compassCooldown[$player->getName()])){
+                    if($msg) $player->sendPopup($msg);
+                    return;
+                }
+                $this->compassCooldown[$player->getName()] = true;
+                $this->getScheduler()->scheduleDelayedTask(new CompassCooldownTask($this, $player), self::$settings["Selector"]["Cooldown"]["Duration"] * 20);
             }
+            $this->serverList($player);
         }
     }
     
@@ -485,7 +427,7 @@ class NaviCompass extends PluginBase implements Listener {
      * @param InventoryTransactionEvent $event
      */
     public function onInventoryTransaction(InventoryTransactionEvent $event){
-        if($this->selectorSupport && $this->forceSlot){
+        if(self::$settings["Selector"]["Enabled"] && self::$settings["Selector"]["Force-Slot"]){
             $transaction = $event->getTransaction();
             foreach($transaction->getActions() as $action){
                 $item = $action->getSourceItem();

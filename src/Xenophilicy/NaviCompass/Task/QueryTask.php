@@ -27,6 +27,10 @@ class QueryTask extends AsyncTask {
     
     private $host;
     private $port;
+    /**
+     * @var array
+     */
+    private $timeout;
     
     /**
      * QueryTask constructor.
@@ -36,6 +40,7 @@ class QueryTask extends AsyncTask {
     public function __construct(string $host, int $port){
         $this->host = $host;
         $this->port = $port;
+        $this->timeout = NaviCompass::$settings["Timeout"];
     }
     
     public function onRun(){
@@ -54,7 +59,8 @@ class QueryTask extends AsyncTask {
      * @return false|string[]|null
      */
     private function sendQuery(string $host, int $port){
-        $socket = @fsockopen("udp://" . $host, $port, $timeout);
+        $socket = @fsockopen("udp://" . $host, $port);
+        stream_set_timeout($socket, (int)$this->timeout);
         if(!$socket) return null;
         $online = @fwrite($socket, "\xFE\xFD\x09\x10\x20\x30\x40\xFF\xFF\xFF\x01");
         if(!$online) return null;

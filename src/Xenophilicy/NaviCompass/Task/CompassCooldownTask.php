@@ -17,33 +17,37 @@ namespace Xenophilicy\NaviCompass\Task;
 
 use pocketmine\Player;
 use pocketmine\scheduler\Task;
+use Xenophilicy\NaviCompass\NaviCompass;
 
 /**
- * Class TransferTask
+ * Class CompassCooldownTask
  * @package Xenophilicy\NaviCompass\Task
  */
-class TransferTask extends Task {
+class CompassCooldownTask extends Task {
     
-    private $host;
-    private $port;
+    private $plugin;
+    /**
+     * @var Player
+     */
     private $player;
     
     /**
-     * TransferTask constructor.
-     * @param string $host
-     * @param int $port
+     * CompassCooldownTask constructor.
+     * @param NaviCompass $plugin
      * @param Player $player
      */
-    public function __construct(string $host, int $port, Player $player){
-        $this->host = $host;
-        $this->port = $port;
+    public function __construct(NaviCompass $plugin, Player $player){
+        $this->plugin = $plugin;
         $this->player = $player;
     }
     
     /**
+     * Actions to execute when run
+     *
      * @param int $currentTick
+     * @return void
      */
     public function onRun(int $currentTick){
-        $this->player->transfer($this->host, $this->port);
+        unset($this->plugin->compassCooldown[$this->player->getName()]);
     }
 }
