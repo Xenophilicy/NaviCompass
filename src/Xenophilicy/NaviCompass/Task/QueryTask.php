@@ -46,7 +46,7 @@ class QueryTask extends AsyncTask {
     public function onRun(){
         $queryServer = $this->sendQuery($this->host, $this->port);
         $status = $queryServer === null ? 'offline' : 'online';
-        if($status == "online"){
+        if($status == "online" && count($queryServer) >= 16){
             $this->setResult(["online", $queryServer[15], $queryServer[17]]);
         }else{
             $this->setResult(["offline", 0, 0]);
@@ -60,8 +60,8 @@ class QueryTask extends AsyncTask {
      */
     private function sendQuery(string $host, int $port){
         $socket = @fsockopen("udp://" . $host, $port);
-        stream_set_timeout($socket, (int)$this->timeout);
         if(!$socket) return null;
+        stream_set_timeout($socket, (int)$this->timeout);
         $online = @fwrite($socket, "\xFE\xFD\x09\x10\x20\x30\x40\xFF\xFF\xFF\x01");
         if(!$online) return null;
         $challenge = @fread($socket, 1400);
