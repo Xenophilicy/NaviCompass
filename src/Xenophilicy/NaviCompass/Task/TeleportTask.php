@@ -52,12 +52,12 @@ class TeleportTask extends Task {
      */
     public function onRun(int $currentTick){
         if($this->waterdog){
-			$pk = new ScriptCustomEventPacket();
-			$pk->eventName = "bungeecord:main";
-			$pk->eventData = Binary::writeShort(strlen("Connect")) . "Connect" . Binary::writeShort(strlen($this->cmdString)) . $this->cmdString;
-			$this->player->sendDataPacket($pk);
-			return;
-		}
+	    $pk = new ScriptCustomEventPacket();
+	    $pk->eventName = "bungeecord:main";
+	    $pk->eventData = Binary::writeShort(strlen("Connect")) . "Connect" . Binary::writeShort(strlen($this->cmdString)) . $this->cmdString;
+	    $this->player->sendDataPacket($pk);
+	    return;
+	}
         if(strtolower(NaviCompass::$settings["World-CMD-Mode"]) == "player"){
             $this->plugin->getServer()->getCommandMap()->dispatch($this->player, $this->cmdString);
         }else if(strtolower(NaviCompass::$settings["World-CMD-Mode"]) == "console"){
