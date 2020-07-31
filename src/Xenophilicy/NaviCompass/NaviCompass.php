@@ -258,7 +258,7 @@ class NaviCompass extends PluginBase implements Listener {
                         $this->getScheduler()->scheduleDelayedTask(new TeleportTask($this, $cmdStr, $player), $delay * 20);
                         break;
                     case "wd":
-                        $cmdStr = "server " . $value[2];
+                        $cmdStr = $value[2];
                         $this->sendActions("Transfer", $player);
                         $this->getScheduler()->scheduleDelayedTask(new TeleportTask($this, $cmdStr, $player, true), $delay * 20);
                         break;
