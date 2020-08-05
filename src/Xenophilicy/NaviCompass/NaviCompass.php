@@ -25,7 +25,7 @@ use pocketmine\item\Item;
 use pocketmine\network\mcpe\protocol\PlaySoundPacket;
 use pocketmine\Player;
 use pocketmine\plugin\PluginBase;
-use pocketmine\utils\{Config, TextFormat as TF};
+use pocketmine\utils\TextFormat as TF;
 use Xenophilicy\NaviCompass\libs\jojoe77777\FormAPI\SimpleForm;
 use Xenophilicy\NaviCompass\Task\CompassCooldownTask;
 use Xenophilicy\NaviCompass\Task\QueryTaskCaller;
@@ -38,23 +38,17 @@ use Xenophilicy\NaviCompass\Task\TransferTask;
  */
 class NaviCompass extends PluginBase implements Listener {
     
-    /**
-     * @var array
-     */
+    /** @var array */
     public static $settings;
-    /**
-     * @var NaviCompass
-     */
+    /** @var NaviCompass */
     private static $plugin;
+    
     public $compassCooldown = [];
     private $queryResults;
     private $list;
     private $enchInst;
     
-    /**
-     * @return mixed
-     */
-    public static function getPlugin(){
+    public static function getPlugin(): self{
         return self::$plugin;
     }
     
@@ -66,8 +60,7 @@ class NaviCompass extends PluginBase implements Listener {
             $this->getLogger()->notice("It appears that this is the first time you are using NaviCompass! Before reporting that the plugin doesn't work, please be sure your config file is setup correctly.");
         }
         $this->saveDefaultConfig();
-        $this->config = new Config($configPath, Config::YAML);
-        self::$settings = $this->config->getAll();
+        self::$settings = $this->getConfig()->getAll();
         $configVersion = self::$settings["VERSION"];
         $pluginVersion = $this->getDescription()->getVersion();
         if(version_compare("2.3.0", $configVersion, "gt")){
@@ -159,11 +152,7 @@ class NaviCompass extends PluginBase implements Listener {
         $this->enchInst = new EnchantmentInstance($enchantment, 1);
     }
     
-    /**
-     * @param string $host
-     * @param int $port
-     */
-    private function startQueryTask(string $host, int $port){
+    private function startQueryTask(string $host, int $port): void{
         $this->getScheduler()->scheduleRepeatingTask(new QueryTaskCaller($this, $host, $port), 200);
     }
     
@@ -184,7 +173,7 @@ class NaviCompass extends PluginBase implements Listener {
      * @param string $host
      * @param int $port
      */
-    public function queryTaskCallback($result, string $host, int $port){
+    public function queryTaskCallback($result, string $host, int $port): void{
         $this->queryResults[$host . ":" . $port] = $result;
     }
     
@@ -231,10 +220,7 @@ class NaviCompass extends PluginBase implements Listener {
         return true;
     }
     
-    /**
-     * @param Player $player
-     */
-    public function serverList(Player $player){
+    public function serverList(Player $player): void{
         if(!in_array(self::$settings["Sounds"]["UI"], [false, "false", "off"])){
             $this->playSound(self::$settings["Sounds"]["UI"], $player);
         }
@@ -336,11 +322,7 @@ class NaviCompass extends PluginBase implements Listener {
         $player->sendForm($form);
     }
     
-    /**
-     * @param string $soundName
-     * @param Player $player
-     */
-    public function playSound(string $soundName, Player $player){
+    public function playSound(string $soundName, Player $player): void{
         $sound = new PlaySoundPacket();
         $sound->x = $player->getX();
         $sound->y = $player->getY();
@@ -351,23 +333,16 @@ class NaviCompass extends PluginBase implements Listener {
         $this->getServer()->broadcastPacket([$player], $sound);
     }
     
-    /**
-     * @param string $type
-     * @param Player $player
-     */
-    private function sendActions(string $type, Player $player){
+    private function sendActions(string $type, Player $player): void{
         if(!in_array(self::$settings["Sounds"][$type], [false, "false", "off"])){
             $this->playSound(self::$settings["Sounds"][$type], $player);
         }
         if(!in_array(self::$settings["Titles"][$type], [false, "false", "off"])){
-            $player->addTitle(self::$settings["Titles"][$type]);
+            $player->sendTitle(self::$settings["Titles"][$type]);
         }
     }
     
-    /**
-     * @param PlayerJoinEvent $event
-     */
-    public function onJoin(PlayerJoinEvent $event){
+    public function onJoin(PlayerJoinEvent $event): void{
         if(self::$settings["Selector"]["Enabled"]){
             $player = $event->getPlayer();
             $item = Item::get(self::$settings["Selector"]["Item"]);
@@ -379,10 +354,7 @@ class NaviCompass extends PluginBase implements Listener {
         }
     }
     
-    /**
-     * @param PlayerQuitEvent $event
-     */
-    public function onQuit(PlayerQuitEvent $event){
+    public function onQuit(PlayerQuitEvent $event): void{
         $player = $event->getPlayer();
         $items = $player->getInventory()->getContents();
         foreach($items as $target){
@@ -401,10 +373,7 @@ class NaviCompass extends PluginBase implements Listener {
         return false;
     }
     
-    /**
-     * @param PlayerInteractEvent $event
-     */
-    public function onInteract(PlayerInteractEvent $event){
+    public function onInteract(PlayerInteractEvent $event): void{
         if(self::$settings["Selector"]["Enabled"]){
             $player = $event->getPlayer();
             $item = $player->getInventory()->getItemInHand();
@@ -423,10 +392,7 @@ class NaviCompass extends PluginBase implements Listener {
         }
     }
     
-    /**
-     * @param InventoryTransactionEvent $event
-     */
-    public function onInventoryTransaction(InventoryTransactionEvent $event){
+    public function onInventoryTransaction(InventoryTransactionEvent $event): void{
         if(self::$settings["Selector"]["Enabled"] && self::$settings["Selector"]["Force-Slot"]){
             $transaction = $event->getTransaction();
             foreach($transaction->getActions() as $action){

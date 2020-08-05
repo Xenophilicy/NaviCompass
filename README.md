@@ -1,5 +1,5 @@
 # NaviCompass
-[![](https://poggit.pmmp.io/shield.state/NaviCompass)](https://poggit.pmmp.io/p/NaviCompass)
+[![Poggit NaviCompass](https://poggit.pmmp.io/shield.state/NaviCompass)](https://poggit.pmmp.io/p/NaviCompass)
 [![HitCount](http://hits.dwyl.io/Xenophilicy/NaviCompass.svg)](http://hits.dwyl.io/Xenophilicy/NaviCompass)
 [![Discord Chat](https://img.shields.io/discord/490677165289897995.svg)](https://discord.gg/hNVehXe)
 

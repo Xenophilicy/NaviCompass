@@ -27,9 +27,6 @@ class QueryTask extends AsyncTask {
     
     private $host;
     private $port;
-    /**
-     * @var array
-     */
     private $timeout;
     
     /**
@@ -52,6 +49,8 @@ class QueryTask extends AsyncTask {
             $this->setResult(["offline", 0, 0]);
         }
     }
+    
+    // This was borrowed from a GitHub Gist by xBeastMode → https://gist.github.com/xBeastMode/89a9d85c21ec5f42f14db49550ea8e5c
     
     /**
      * @param string $host
@@ -81,8 +80,6 @@ class QueryTask extends AsyncTask {
         @fclose($socket);
         return $response;
     }
-    
-    // This is an edited GitHub Gist by xBeastMode → https://gist.github.com/xBeastMode/89a9d85c21ec5f42f14db49550ea8e5c
     
     /**
      * @param Server $server

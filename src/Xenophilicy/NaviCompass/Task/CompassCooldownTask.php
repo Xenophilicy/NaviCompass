@@ -26,9 +26,6 @@ use Xenophilicy\NaviCompass\NaviCompass;
 class CompassCooldownTask extends Task {
     
     private $plugin;
-    /**
-     * @var Player
-     */
     private $player;
     
     /**
@@ -43,7 +40,6 @@ class CompassCooldownTask extends Task {
     
     /**
      * Actions to execute when run
-     *
      * @param int $currentTick
      * @return void
      */
