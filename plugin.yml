@@ -1,6 +1,6 @@
 name: NaviCompass
 author: Xenophilicy
-version: 2.3.3
+version: 2.3.4
 main: Xenophilicy\NaviCompass\NaviCompass
 api: 3.0.0
 mcpe-protocol: [407, 408]

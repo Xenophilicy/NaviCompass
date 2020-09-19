@@ -18,7 +18,12 @@ namespace Xenophilicy\NaviCompass;
 use pocketmine\command\{Command, CommandSender, PluginCommand};
 use pocketmine\event\inventory\InventoryTransactionEvent;
 use pocketmine\event\Listener;
-use pocketmine\event\player\{PlayerInteractEvent, PlayerJoinEvent, PlayerQuitEvent};
+use pocketmine\event\player\{
+    PlayerDeathEvent,
+    PlayerInteractEvent,
+    PlayerJoinEvent,
+    PlayerQuitEvent,
+    PlayerRespawnEvent};
 use pocketmine\inventory\transaction\action\{DropItemAction, SlotChangeAction};
 use pocketmine\item\enchantment\{Enchantment, EnchantmentInstance};
 use pocketmine\item\Item;
@@ -406,4 +411,22 @@ class NaviCompass extends PluginBase implements Listener {
             }
         }
     }
+
+    public function onDeath(PlayerDeathEvent $event){
+        $player = $event->getPlayer();
+        $event->setDrops(array_diff($player->getInventory()->getContents(), [$player->getInventory()->getItem(self::$settings["Selector"]["Slot"])]));
+    }
+
+    public function onRespawn(PlayerRespawnEvent $event){
+        if(self::$settings["Selector"]["Enabled"]){
+            $player = $event->getPlayer();
+            $item = Item::get(self::$settings["Selector"]["Item"]);
+            $item->setCustomName(self::$settings["Selector"]["Name"]);
+            $item->setLore([self::$settings["Selector"]["Lore"]]);
+            $item->addEnchantment($this->enchInst);
+            $slot = self::$settings["Selector"]["Slot"];
+            $player->getInventory()->setItem($slot, $item, true);
+        }
+    }
+
 }
