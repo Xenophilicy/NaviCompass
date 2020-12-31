@@ -1,3 +1,5 @@
+> # I have frozen my personal support for public plugins. The plugins will remain public on GitHub (though archived) for anyone that would like to keep them updated.  This my final decision on the matter. No support will be provided - you will be ignored - regardless of private or public inquiry.
+
 # NaviCompass
 [![Poggit NaviCompass](https://poggit.pmmp.io/shield.state/NaviCompass)](https://poggit.pmmp.io/p/NaviCompass)
 [![HitCount](http://hits.dwyl.io/Xenophilicy/NaviCompass.svg)](http://hits.dwyl.io/Xenophilicy/NaviCompass)
