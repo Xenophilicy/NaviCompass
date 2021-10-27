@@ -1,5 +1,5 @@
 name: NaviCompass
-author: Vecnavium, Xenophilicy
+author: [Vecnavium, Xenophilicy]
 version: 2.3.6
 main: Xenophilicy\NaviCompass\NaviCompass
 api: 3.0.0
