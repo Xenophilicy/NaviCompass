@@ -1,9 +1,9 @@
 name: NaviCompass
-author: Xenophilicy
+author: Vecnavium, Xenophilicy
 version: 2.3.5
 main: Xenophilicy\NaviCompass\NaviCompass
 api: 3.0.0
-mcpe-protocol: [419, 422]
+mcpe-protocol: [471]
 description: View all your servers or worlds in a list using FormAPI!
 commands:
   navicompass:
