@@ -34,9 +34,9 @@ class TransferTask extends Task {
      * @param int $port
      * @param Player $player
      */
-    public function __construct(string $host, int $port, Player $player) {
+    public function __construct(string $host, string $port, Player $player) {
         $this->host = $host;
-        $this->port = $port;
+        $this->port = (int)$port;
         $this->player = $player;
     }
 
