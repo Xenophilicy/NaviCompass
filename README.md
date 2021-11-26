@@ -1,9 +1,13 @@
-# Information
-[![](https://poggit.pmmp.io/shield.state/NaviCompass)](https://poggit.pmmp.io/p/NaviCompass)
-[![](https://poggit.pmmp.io/shield.dl.total/NaviCompass)](https://poggit.pmmp.io/p/NaviCompass)
-[![](https://poggit.pmmp.io/shield.dl/NaviCompass)](https://poggit.pmmp.io/p/NaviCompass)
-[![](https://poggit.pmmp.io/shield.dl.total/NaviCompass)](https://poggit.pmmp.io/p/NaviCompass)
-![XenoServers Discord server](https://img.shields.io/discord/490677165289897995.svg?style=flat-square)
+<p align="center">
+    <a href="https://github.com/Xenophilicy/NaviCompass"><img src="https://github.com/Xenophilicy/NaviCompass/blob/master/icon.png"></img></a><br>
+    <b>NaviCompass allows your players to transfer between your server network and worlds with simplicity.</b>
+</p>
+
+<p align="center">
+    <img alt="GitHubrelease" src="https://img.shields.io/github/v/release/Xenophilicy/NaviCompass?label=release&sort=semver">
+      <img alt="Stars" src= "https://img.shields.io/github/stars/Xenophilicy/NaviCompass?style=for-the-badge">
+    <a href="https://discord.gg/6M9tGyWPjr"><img src="https://img.shields.io/discord/837701868649709568?label=discord&color=7289DA&logo=discord" alt="Discord" /></a>
+</p>
 
 NaviCompass allows your players to transfer between your server network and worlds with simplicity. This plugin uses FormAPI to easily display your servers and worlds listed in a simple interface. It's easy, all you need to do is enter your IPs and ports of the servers or the names of your worlds you would like to add, along with a label to show up as the name in the UI, all inside the config.yml file. After that, the plugin will do the rest and you're good to go! Players will either have option to interact with the selector item, or type your custom command in chat to access the UI. You also have the option to play sounds and show titles to the players during different events in the plugin! All of these things can also be customized in the config.yml file. Server networks simplified! 
 
