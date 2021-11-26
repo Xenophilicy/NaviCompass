@@ -15,7 +15,7 @@
 
 namespace Xenophilicy\NaviCompass\Task;
 
-use pocketmine\Player;
+use pocketmine\player\Player;
 use pocketmine\scheduler\Task;
 use Xenophilicy\NaviCompass\NaviCompass;
 
@@ -25,25 +25,24 @@ use Xenophilicy\NaviCompass\NaviCompass;
  */
 class CompassCooldownTask extends Task {
     
-    private $plugin;
-    private $player;
+    private NaviCompass $plugin;
+    private Player $player;
     
     /**
      * CompassCooldownTask constructor.
      * @param NaviCompass $plugin
      * @param Player $player
      */
-    public function __construct(NaviCompass $plugin, Player $player){
+    public function __construct(NaviCompass $plugin, Player $player) {
         $this->plugin = $plugin;
         $this->player = $player;
     }
     
     /**
      * Actions to execute when run
-     * @param int $currentTick
      * @return void
      */
-    public function onRun(int $currentTick){
+    public function onRun(): void {
         unset($this->plugin->compassCooldown[$this->player->getName()]);
     }
 }

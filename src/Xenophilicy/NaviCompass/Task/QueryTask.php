@@ -25,27 +25,27 @@ use Xenophilicy\NaviCompass\NaviCompass;
  */
 class QueryTask extends AsyncTask {
     
-    private $host;
-    private $port;
-    private $timeout;
+    private string $host;
+    private int $port;
+    private int $timeout;
     
     /**
      * QueryTask constructor.
      * @param string $host
      * @param int $port
      */
-    public function __construct(string $host, int $port){
+    public function __construct(string $host, int $port) {
         $this->host = $host;
         $this->port = $port;
         $this->timeout = NaviCompass::$settings["Timeout"];
     }
     
-    public function onRun(){
+    public function onRun(): void {
         $queryServer = $this->sendQuery($this->host, $this->port);
         $status = $queryServer === null ? 'offline' : 'online';
-        if($status == "online" && count($queryServer) >= 16){
+        if($status == "online" && count($queryServer) >= 16) {
             $this->setResult(["online", $queryServer[15], $queryServer[17]]);
-        }else{
+        } else {
             $this->setResult(["offline", 0, 0]);
         }
     }
@@ -55,9 +55,9 @@ class QueryTask extends AsyncTask {
     /**
      * @param string $host
      * @param int $port
-     * @return false|string[]|null
+     * @return array|null
      */
-    private function sendQuery(string $host, int $port){
+    private function sendQuery(string $host, int $port) {
         $socket = @fsockopen("udp://" . $host, $port);
         if(!$socket) return null;
         stream_set_timeout($socket, (int)$this->timeout);
@@ -80,11 +80,8 @@ class QueryTask extends AsyncTask {
         @fclose($socket);
         return $response;
     }
-    
-    /**
-     * @param Server $server
-     */
-    public function onCompletion(Server $server){
+
+    public function onCompletion(): void {
         NaviCompass::getPlugin()->queryTaskCallback($this->getResult(), $this->host, $this->port);
     }
 }

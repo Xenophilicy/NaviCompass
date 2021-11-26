@@ -15,9 +15,10 @@
 
 namespace Xenophilicy\NaviCompass\Task;
 
-use pocketmine\command\ConsoleCommandSender;
+use pocketmine\console\ConsoleCommandSender;
 use pocketmine\network\mcpe\protocol\ScriptCustomEventPacket;
-use pocketmine\Player;
+use pocketmine\network\mcpe\protocol\TransferPacket;
+use pocketmine\player\Player;
 use pocketmine\scheduler\Task;
 use pocketmine\utils\Binary;
 use Xenophilicy\NaviCompass\NaviCompass;
@@ -28,10 +29,10 @@ use Xenophilicy\NaviCompass\NaviCompass;
  */
 class TeleportTask extends Task {
     
-    private $plugin;
-    private $cmdString;
-    private $player;
-    private $waterdog;
+    private NaviCompass $plugin;
+    private string $cmdString;
+    private Player $player;
+    private bool $waterdog;
     
     /**
      * TeleportTask constructor.
@@ -40,28 +41,24 @@ class TeleportTask extends Task {
      * @param Player $player
      * @param bool $waterdog
      */
-    public function __construct(NaviCompass $plugin, string $cmdString, Player $player, bool $waterdog = false){
+    public function __construct(NaviCompass $plugin, string $cmdString, Player $player, bool $waterdog = false) {
         $this->plugin = $plugin;
         $this->cmdString = $cmdString;
         $this->player = $player;
         $this->waterdog = $waterdog;
     }
-    
-    /**
-     * @param int $currentTick
-     */
-    public function onRun(int $currentTick){
-        if($this->waterdog){
-            $pk = new ScriptCustomEventPacket();
-            $pk->eventName = "bungeecord:main";
-            $pk->eventData = Binary::writeShort(strlen("Connect")) . "Connect" . Binary::writeShort(strlen($this->cmdString)) . $this->cmdString;
-            $this->player->sendDataPacket($pk);
+
+    public function onRun(): void {
+        if($this->waterdog) {
+            $pk = new TransferPacket();
+            $pk->address = $this->cmdString;
+            $this->player->getNetworkSession()->sendDataPacket($pk);
             return;
         }
-        if(strtolower(NaviCompass::$settings["World-CMD-Mode"]) == "player"){
+        if(strtolower(NaviCompass::$settings["World-CMD-Mode"]) == "player") {
             $this->plugin->getServer()->getCommandMap()->dispatch($this->player, $this->cmdString);
-        }else if(strtolower(NaviCompass::$settings["World-CMD-Mode"]) == "console"){
-            $this->plugin->getServer()->getCommandMap()->dispatch(new ConsoleCommandSender(), $this->cmdString);
+        } else if(strtolower(NaviCompass::$settings["World-CMD-Mode"]) == "console") {
+            $this->plugin->getServer()->getCommandMap()->dispatch(new ConsoleCommandSender($this->plugin->getServer(), $this->plugin->getServer()->getLanguage()), $this->cmdString);
         }
     }
 }
