@@ -15,7 +15,7 @@
 
 namespace Xenophilicy\NaviCompass\Task;
 
-use pocketmine\Player;
+use pocketmine\player\Player;
 use pocketmine\scheduler\Task;
 
 /**
@@ -24,9 +24,9 @@ use pocketmine\scheduler\Task;
  */
 class TransferTask extends Task {
     
-    private $host;
-    private $port;
-    private $player;
+    private string $host;
+    private int $port;
+    private Player $player;
     
     /**
      * TransferTask constructor.
@@ -34,16 +34,13 @@ class TransferTask extends Task {
      * @param int $port
      * @param Player $player
      */
-    public function __construct(string $host, int $port, Player $player){
+    public function __construct(string $host, string $port, Player $player) {
         $this->host = $host;
-        $this->port = $port;
+        $this->port = (int)$port;
         $this->player = $player;
     }
-    
-    /**
-     * @param int $currentTick
-     */
-    public function onRun(int $currentTick){
+
+    public function onRun(): void {
         $this->player->transfer($this->host, $this->port);
     }
 }

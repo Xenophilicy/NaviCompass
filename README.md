@@ -9,8 +9,6 @@
     <a href="https://discord.gg/6M9tGyWPjr"><img src="https://img.shields.io/discord/837701868649709568?label=discord&color=7289DA&logo=discord" alt="Discord" /></a>
 </p>
 
-This plugin uses FormAPI to easily display your servers and worlds listed in a simple interface. It's easy, all you need to do is enter your IPs and ports of the servers or the names of your worlds you would like to add, along with a label to show up as the name in the UI, all inside the config.yml file. After that, the plugin will do the rest and you're good to go! Players will either have option to interact with the selector item, or type your custom command in chat to access the UI. You also have the option to play sounds and show titles to the players during different events in the plugin! All of these things can also be customized in the config.yml file. Server networks simplified! 
-
 ### **NaviCompass now supports the WaterDog MCBE proxy!**
 
 ***

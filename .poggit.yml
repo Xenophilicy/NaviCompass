@@ -2,7 +2,6 @@
 build-by-default: true
 branches:
 - master
-- PM4
 projects:
   NaviCompass:
     path: ""

@@ -24,9 +24,9 @@ use Xenophilicy\NaviCompass\NaviCompass;
  */
 class QueryTaskCaller extends Task {
     
-    private $plugin;
-    private $host;
-    private $port;
+    private NaviCompass $plugin;
+    private string $host;
+    private int $port;
     
     /**
      * QueryTaskCaller constructor.
@@ -34,16 +34,13 @@ class QueryTaskCaller extends Task {
      * @param string $host
      * @param int $port
      */
-    public function __construct(NaviCompass $plugin, string $host, int $port){
+    public function __construct(NaviCompass $plugin, string $host, int $port) {
         $this->plugin = $plugin;
         $this->host = $host;
         $this->port = $port;
     }
-    
-    /**
-     * @param int $currentTick
-     */
-    public function onRun(int $currentTick){
+
+    public function onRun(): void {
         $this->plugin->getServer()->getAsyncPool()->submitTask(new QueryTask($this->host, $this->port));
     }
 }
