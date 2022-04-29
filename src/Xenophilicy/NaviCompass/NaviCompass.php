@@ -22,9 +22,9 @@ use pocketmine\command\{Command, CommandSender, PluginCommand};
 use pocketmine\data\bedrock\EnchantmentIdMap;
 use pocketmine\event\inventory\InventoryTransactionEvent;
 use pocketmine\event\Listener;
-use pocketmine\event\player\{
-    PlayerDeathEvent,
+use pocketmine\event\player\{PlayerDeathEvent,
     PlayerInteractEvent,
+    PlayerItemUseEvent,
     PlayerJoinEvent,
     PlayerQuitEvent,
     PlayerRespawnEvent};
@@ -380,7 +380,7 @@ class NaviCompass extends PluginBase implements Listener {
         return false;
     }
     
-    public function onInteract(PlayerInteractEvent $event): void {
+    public function onInteract(PlayerItemUseEvent $event): void {
         if (self::$settings["Selector"]["Enabled"]) {
             $player = $event->getPlayer();
             $item = $player->getInventory()->getItemInHand();
