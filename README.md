@@ -14,11 +14,14 @@
 ***
 
 ## Credits
+
 * [Xenophilicy](https://github.com/Xenophilicy/) (original developer)
 * [Vecnavium](https://github.com/Vecnavium/) (Maintainer for the longterm)
 
 # Config
+
 ### Basic settings
+
 ```yaml
 # Choose your transfer type:
 # "external" will use an IP address and port to move players between SERVERS
@@ -39,6 +42,7 @@ World-CMD-Mode: "console"
 ```
 
 ### Command settings
+
 ```yaml
   # Choose whether the command method should be enabled
   Enabled: true
@@ -56,7 +60,9 @@ World-CMD-Mode: "console"
     # This is the command's usage permission
     Node: "navicompass.use"
 ```
+
 ### Selector settings
+
 ```yaml
   # Choose whether the selector item should be enabled
   Enabled: true
@@ -90,7 +96,9 @@ World-CMD-Mode: "console"
   # This is the selector item's description that is displayed under the name
   Lore: "§bClick for Servers"
 ```
+
 ### UI settings
+
 ```yaml
   # This is the title of the transfer UI
   Title: "§9Server List"
@@ -123,6 +131,7 @@ World-CMD-Mode: "console"
 ```
 
 ### Sound settings
+
 ```yaml
   # Choose what sound (if any) to play when opening the UI
   UI: "random.pop"
@@ -135,6 +144,7 @@ World-CMD-Mode: "console"
 ```
 
 ### Titles settings
+
 ```yaml
   # Set the delay to show the title before transferring/teleporting
   # This value is in seconds (default is 2 seconds)
@@ -149,6 +159,7 @@ World-CMD-Mode: "console"
 ```
 
 ### Entry Listing
+
 This is where you list your servers/worlds to be displayed on the server UI
 
 Server format: "ext:ServerTitle:ServerIP:ServerPort:ImageType:Path/URL"

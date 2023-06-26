@@ -23,26 +23,26 @@ use Xenophilicy\NaviCompass\NaviCompass;
  * Class CompassCooldownTask
  * @package Xenophilicy\NaviCompass\Task
  */
-class CompassCooldownTask extends Task {
-    
-    private NaviCompass $plugin;
-    private Player $player;
-    
-    /**
-     * CompassCooldownTask constructor.
-     * @param NaviCompass $plugin
-     * @param Player $player
-     */
-    public function __construct(NaviCompass $plugin, Player $player) {
-        $this->plugin = $plugin;
-        $this->player = $player;
-    }
-    
-    /**
-     * Actions to execute when run
-     * @return void
-     */
-    public function onRun(): void {
-        unset($this->plugin->compassCooldown[$this->player->getName()]);
-    }
+class CompassCooldownTask extends Task{
+
+	private NaviCompass $plugin;
+	private Player $player;
+
+	/**
+	 * CompassCooldownTask constructor.
+	 * @param NaviCompass $plugin
+	 * @param Player $player
+	 */
+	public function __construct(NaviCompass $plugin, Player $player){
+		$this->plugin = $plugin;
+		$this->player = $player;
+	}
+
+	/**
+	 * Actions to execute when run
+	 * @return void
+	 */
+	public function onRun() : void{
+		unset($this->plugin->compassCooldown[$this->player->getName()]);
+	}
 }
