@@ -22,25 +22,25 @@ use pocketmine\scheduler\Task;
  * Class TransferTask
  * @package Xenophilicy\NaviCompass\Task
  */
-class TransferTask extends Task{
+class TransferTask extends Task {
+    
+    private string $host;
+    private int $port;
+    private Player $player;
+    
+    /**
+     * TransferTask constructor.
+     * @param string $host
+     * @param int $port
+     * @param Player $player
+     */
+    public function __construct(string $host, string $port, Player $player) {
+        $this->host = $host;
+        $this->port = (int)$port;
+        $this->player = $player;
+    }
 
-	private string $host;
-	private int $port;
-	private Player $player;
-
-	/**
-	 * TransferTask constructor.
-	 * @param string $host
-	 * @param int $port
-	 * @param Player $player
-	 */
-	public function __construct(string $host, string $port, Player $player){
-		$this->host = $host;
-		$this->port = (int)$port;
-		$this->player = $player;
-	}
-
-	public function onRun() : void{
-		$this->player->transfer($this->host, $this->port);
-	}
+    public function onRun(): void {
+        $this->player->transfer($this->host, $this->port);
+    }
 }
