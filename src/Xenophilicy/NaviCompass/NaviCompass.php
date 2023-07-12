@@ -87,9 +87,8 @@ class NaviCompass extends PluginBase implements Listener {
             } else {
                 $cmd = new PluginCommand($cmdName, $this, $this);
                 $cmd->setDescription(self::$settings["Command"]["Description"]);
-                if (self::$settings["Command"]["Permission"]["Enabled"]) {
-                    $cmd->setPermission(self::$settings["Command"]["Permission"]["Node"]);
-                }
+				$cmd->setPermission("navicompass.use");
+
                 $this->getServer()->getCommandMap()->register("NaviCompass", $cmd, $cmdName);
             }
         } else {

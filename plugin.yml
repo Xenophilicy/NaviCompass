@@ -12,3 +12,5 @@ commands:
 permissions:
   navicompass.info:
     default: true
+  navicompass.use:
+    default: true

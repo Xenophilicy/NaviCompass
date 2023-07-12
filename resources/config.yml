@@ -65,13 +65,6 @@ Command:
   # This is the command's description shown in the command window
   Description: "Open the server list!"
 
-  Permission:
-    # Choose whether to require players to have permission to use the command
-    Enabled: false
-
-    # This is the command's usage permission
-    Node: "navicompass.use"
-
 Selector:
   # Choose whether the selector item should be enabled
   Enabled: true
