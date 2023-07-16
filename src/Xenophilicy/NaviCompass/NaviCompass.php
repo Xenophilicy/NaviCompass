@@ -23,7 +23,6 @@ use pocketmine\data\bedrock\EnchantmentIdMap;
 use pocketmine\event\inventory\InventoryTransactionEvent;
 use pocketmine\event\Listener;
 use pocketmine\event\player\{PlayerDeathEvent,
-    PlayerInteractEvent,
     PlayerItemUseEvent,
     PlayerJoinEvent,
     PlayerQuitEvent,
@@ -31,11 +30,11 @@ use pocketmine\event\player\{PlayerDeathEvent,
 use pocketmine\inventory\transaction\action\{DropItemAction, SlotChangeAction};
 use pocketmine\item\enchantment\{Enchantment, EnchantmentInstance, ItemFlags, Rarity};
 use pocketmine\item\Item;
-use pocketmine\item\ItemFactory;
 use pocketmine\network\mcpe\protocol\PlaySoundPacket;
 use pocketmine\player\Player;
 use pocketmine\plugin\PluginBase;
 use pocketmine\utils\TextFormat as TF;
+use pocketmine\world\format\io\GlobalItemDataHandlers;
 use Xenophilicy\NaviCompass\libs\jojoe77777\FormAPI\SimpleForm;
 use Xenophilicy\NaviCompass\Task\CompassCooldownTask;
 use Xenophilicy\NaviCompass\Task\QueryTaskCaller;
@@ -88,9 +87,8 @@ class NaviCompass extends PluginBase implements Listener {
             } else {
                 $cmd = new PluginCommand($cmdName, $this, $this);
                 $cmd->setDescription(self::$settings["Command"]["Description"]);
-                if (self::$settings["Command"]["Permission"]["Enabled"]) {
-                    $cmd->setPermission(self::$settings["Command"]["Permission"]["Node"]);
-                }
+				$cmd->setPermission("navicompass.use");
+
                 $this->getServer()->getCommandMap()->register("NaviCompass", $cmd, $cmdName);
             }
         } else {
@@ -348,18 +346,10 @@ class NaviCompass extends PluginBase implements Listener {
             $player->sendTitle(self::$settings["Titles"][$type]);
         }
     }
-    
-    public function onJoin(PlayerJoinEvent $event): void {
-        if (self::$settings["Selector"]["Enabled"]) {
-            $player = $event->getPlayer();
-            $item = ItemFactory::getInstance()->get(self::$settings["Selector"]["Item"]);
-            $item->setCustomName(self::$settings["Selector"]["Name"]);
-            $item->setLore([self::$settings["Selector"]["Lore"]]);
-            $item->addEnchantment($this->enchInst);
-            $slot = self::$settings["Selector"]["Slot"];
-            $player->getInventory()->setItem($slot, $item);
-        }
-    }
+
+	public function onJoin(PlayerJoinEvent $event) : void{
+		$this->giveItemToPlayer($event->getPlayer());
+	}
     
     public function onQuit(PlayerQuitEvent $event): void {
         $player = $event->getPlayer();
@@ -370,15 +360,17 @@ class NaviCompass extends PluginBase implements Listener {
             }
         }
     }
-    
-    private function isSelectorItem(Item $item): bool {
-        if (self::$settings["Selector"]["Enabled"]) {
-            if ($item->getCustomName() == self::$settings["Selector"]["Name"] && $item->getId() == self::$settings["Selector"]["Item"] && $item->getLore() == [self::$settings["Selector"]["Lore"]]) {
-                return true;
-            }
-        }
-        return false;
-    }
+
+	private function isSelectorItem(Item $item) : bool{
+		if(self::$settings["Selector"]["Enabled"]){
+			$savedData = GlobalItemDataHandlers::getUpgrader()->upgradeItemTypeDataInt(self::$settings["Selector"]["Item"], 0, 1, null);
+			$typeId = GlobalItemDataHandlers::getDeserializer()->deserializeStack($savedData)->getTypeId();
+			if($item->getCustomName() == self::$settings["Selector"]["Name"] && $item->getTypeId() == $typeId && $item->getLore() == [self::$settings["Selector"]["Lore"]]){
+				return true;
+			}
+		}
+		return false;
+	}
     
     public function onInteract(PlayerItemUseEvent $event): void {
         if (self::$settings["Selector"]["Enabled"]) {
@@ -419,16 +411,24 @@ class NaviCompass extends PluginBase implements Listener {
         $event->setDrops(array_diff($player->getInventory()->getContents(), [$player->getInventory()->getItem(self::$settings["Selector"]["Slot"])]));
     }
 
-    public function onRespawn(PlayerRespawnEvent $event) {
-        if (self::$settings["Selector"]["Enabled"]) {
-            $player = $event->getPlayer();
-            $item = ItemFactory::getInstance()->get(self::$settings["Selector"]["Item"]);
-            $item->setCustomName(self::$settings["Selector"]["Name"]);
-            $item->setLore([self::$settings["Selector"]["Lore"]]);
-            $item->addEnchantment($this->enchInst);
-            $slot = self::$settings["Selector"]["Slot"];
-            $player->getInventory()->setItem($slot, $item, true);
-        }
-    }
+	public function onRespawn(PlayerRespawnEvent $event) : void{
+		$this->giveItemToPlayer($event->getPlayer());
+	}
+
+	/**
+	 * @param Player $player
+	 * @return void
+	 */
+	public function giveItemToPlayer(Player $player) : void{
+		if(self::$settings["Selector"]["Enabled"]){
+			$savedData = GlobalItemDataHandlers::getUpgrader()->upgradeItemTypeDataInt(self::$settings["Selector"]["Item"], 0, 1, null);
+			$item = GlobalItemDataHandlers::getDeserializer()->deserializeStack($savedData);
+			$item->setCustomName(self::$settings["Selector"]["Name"]);
+			$item->setLore([self::$settings["Selector"]["Lore"]]);
+			$item->addEnchantment($this->enchInst);
+			$slot = self::$settings["Selector"]["Slot"];
+			$player->getInventory()->setItem($slot, $item);
+		}
+	}
 
 }
